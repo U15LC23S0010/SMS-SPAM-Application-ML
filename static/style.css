@@ -106,6 +106,33 @@ h1, h2, h3, h4, .headline {
     animation: pulse 2s infinite;
 }
 
+.btn-pwa-old {
+    background: #3b82f6 !important;
+    color: white !important;
+    border: none !important;
+    padding: 10px 20px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3) !important;
+    font-family: 'Inter', sans-serif !important;
+}
+
+.btn-pwa-old:hover {
+    background: #2563eb !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4) !important;
+}
+
+.btn-pwa-old:active {
+    transform: scale(0.95) !important;
+}
+
 /* --- TOP NAVIGATION --- */
 .top-nav {
     position: fixed;

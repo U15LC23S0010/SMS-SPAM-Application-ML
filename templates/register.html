@@ -93,14 +93,6 @@
     </div>
     <script>lucide.createIcons();</script>
 
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister().then(function() { console.log('SW unregistered'); });
-                }
-            });
-        }
-    </script>
+    <script src="{{ url_for('static', filename='pwa.js') }}"></script>
 </body>
 </html>

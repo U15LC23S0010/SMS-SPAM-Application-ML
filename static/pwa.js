@@ -14,7 +14,6 @@ if (installBtn) {
         e.preventDefault();
         deferredPrompt = e;
         installBtn.style.display = 'inline-flex';
-        installBtn.classList.add('pulsing-install');
         console.log('PWA: Ready to install');
     });
 

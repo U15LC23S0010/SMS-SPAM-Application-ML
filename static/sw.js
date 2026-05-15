@@ -1,4 +1,4 @@
-const CACHE_NAME = 'guardian-v4';
+const CACHE_NAME = 'guardian-v5';
 const STATIC_ASSETS = [
     '/static/style.css',
     '/static/script.js',
