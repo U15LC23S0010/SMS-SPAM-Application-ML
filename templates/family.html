@@ -21,10 +21,12 @@
                 <a href="/history" class="nav-link"><i data-lucide="history"></i> History</a>
             </div>
             <div class="nav-right">
-                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
-                    <i data-lucide="download" style="width: 14px;"></i> Install App
-                </button>
-                <a href="/dashboard" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.8rem;">Back to Hub</a>
+                <div style="display: flex; gap: 4px; margin-right: 8px;">
+                    <button onclick="setLanguage('en')" id="btn-en" class="btn" style="padding: 4px 8px; font-size: 0.65rem;">EN</button>
+                    <button onclick="setLanguage('kn')" id="btn-kn" class="btn" style="padding: 4px 8px; font-size: 0.65rem; background: #e0e0e0; color: #666;">KN</button>
+                </div>
+                <a href="/settings" class="nav-icon-btn"><i data-lucide="settings"></i></a>
+                <a href="/logout" class="nav-icon-btn text-danger"><i data-lucide="log-out"></i></a>
             </div>
         </div>
     </nav>
@@ -32,11 +34,11 @@
     <main class="main-content">
         <header class="editorial-header">
             <span class="editorial-cap">Security Collaboration</span>
-            <h1 style="font-size: 3rem; margin: 0;">Family Protection</h1>
-            <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">Monitor and secure your family members' communications in real-time.</p>
+            <h1 id="tour-hub-title">Family Protection</h1>
+            <p style="color: var(--text-muted); font-size: 1rem; margin-top: 8px;">Monitor and secure your family members' communications in real-time.</p>
         </header>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 48px;">
+        <div class="dashboard-grid" style="margin-top: 32px;">
             <div class="bento-card">
                 <div class="section-title"><i data-lucide="user-plus"></i> Add New Member</div>
                 <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 24px;">

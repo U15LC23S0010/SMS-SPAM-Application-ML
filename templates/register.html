@@ -21,9 +21,14 @@
             max-width: 680px;
             background: var(--surface-container-lowest);
             border-radius: var(--radius-xl);
-            padding: 56px;
+            padding: 32px 20px;
             border: 1px solid var(--outline-variant);
-            box-shadow: var(--shadow-ambient);
+            box-shadow: var(--shadow-md);
+        }
+        @media (min-width: 768px) {
+            .auth-card {
+                padding: 56px;
+            }
         }
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
         @media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; gap: 16px; } }

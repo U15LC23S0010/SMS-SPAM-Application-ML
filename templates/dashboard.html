@@ -10,7 +10,16 @@
     <style>
         .chat-bubble-ai { background: var(--surface-container-low); padding: 16px; border-radius: 12px 12px 12px 2px; font-size: 0.9rem; }
         .chat-bubble-user { background: var(--primary); color: white; padding: 16px; border-radius: 12px 12px 2px 12px; font-size: 0.9rem; margin-left: auto; }
-        .notif-dropdown { top: 70px; right: 40px; }
+        .notif-dropdown { top: 70px; right: 20px; width: calc(100% - 40px); max-width: 360px; }
+        @media (max-width: 767px) {
+            .editorial-header h1 { font-size: 2.2rem !important; }
+            .teacher-container { width: 100%; right: 0 !important; left: 0 !important; padding: 0 20px; }
+            .teacher-bubble { width: 100%; max-width: 100%; }
+            #chatbot-container { bottom: 0; right: 0; width: 100%; max-width: 100%; height: 80vh; border-radius: 24px 24px 0 0; }
+        }
+        @media (min-width: 768px) {
+            .notif-dropdown { right: 40px; width: 360px; }
+        }
     </style>
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/static/icon-192x192.png">
@@ -67,22 +76,15 @@
                 {% endif %}
             </div>
             <div class="nav-right">
-                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
-                    <i data-lucide="download" style="width: 14px;"></i> Install App
-                </button>
-                <div style="display: flex; gap: 8px; margin-right: 12px;">
-                    <button onclick="setLanguage('en')" id="btn-en" class="btn" style="padding: 6px 12px; font-size: 0.7rem;">EN</button>
-                    <button onclick="setLanguage('kn')" id="btn-kn" class="btn" style="padding: 6px 12px; font-size: 0.7rem; background: #e0e0e0; color: #666;">ಕನ್ನಡ</button>
+                <div style="display: flex; gap: 4px; margin-right: 8px;">
+                    <button onclick="setLanguage('en')" id="btn-en" class="btn" style="padding: 4px 8px; font-size: 0.65rem;">EN</button>
+                    <button onclick="setLanguage('kn')" id="btn-kn" class="btn" style="padding: 4px 8px; font-size: 0.65rem; background: #e0e0e0; color: #666;">KN</button>
                 </div>
-                <button class="nav-icon-btn" onclick="startTourManual()" title="App Guide">
-                    <i data-lucide="help-circle"></i>
-                </button>
                 <button class="nav-icon-btn" onclick="toggleNotifications(event)">
                     <i data-lucide="bell"></i>
                     <span id="notif-badge" class="notification-badge"></span>
                 </button>
                 <a href="/settings" class="nav-icon-btn"><i data-lucide="settings"></i></a>
-                <a href="/profile" class="nav-icon-btn"><i data-lucide="user"></i></a>
                 <a href="/logout" class="nav-icon-btn text-danger"><i data-lucide="log-out"></i></a>
             </div>
         </div>
@@ -100,9 +102,9 @@
     <main class="main-content animate-reveal">
         <!-- Editorial Header -->
         <header class="editorial-header">
-            <span class="editorial-cap" data-t="welcome_msg">Welcome, {{ user['name'] }}</span>
-            <h1 id="tour-hub-title" style="font-size: 3rem; margin: 0;">Security Hub</h1>
-            <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">AI-assisted analysis of suspicious communications.</p>
+            <span class="editorial-cap" data-t="welcome_msg">Welcome back, {{ user['name'] }}</span>
+            <h1 id="tour-hub-title">Security Hub</h1>
+            <p style="color: var(--text-muted); font-size: 1rem; margin-top: 8px;">AI-assisted analysis of suspicious communications.</p>
         </header>
 
         <!-- Global Nuclear Alert -->
@@ -255,7 +257,7 @@
         <i data-lucide="message-circle" style="width: 28px; height: 28px;"></i>
     </button>
 
-    <div id="chatbot-container" style="display: none; position: fixed; bottom: 100px; right: 32px; width: 400px; height: 500px; background: white; border-radius: 24px; box-shadow: var(--shadow-lg); border: 1px solid var(--outline-variant); flex-direction: column; overflow: hidden; z-index: 1001; animation: slideUp 0.4s ease;">
+    <div id="chatbot-container" style="display: none; position: fixed; bottom: 100px; right: 20px; width: calc(100% - 40px); max-width: 400px; height: 500px; background: white; border-radius: 24px; box-shadow: var(--shadow-lg); border: 1px solid var(--outline-variant); flex-direction: column; overflow: hidden; z-index: 1001; animation: slideUp 0.4s ease;">
         <div style="background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
             <div style="display: flex; align-items: center; gap: 12px;">
                 <i data-lucide="shield" style="width: 20px;"></i>

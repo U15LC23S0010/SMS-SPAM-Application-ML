@@ -24,27 +24,18 @@
         <div class="nav-wrapper">
             <div class="nav-container">
                 <a href="/dashboard" class="nav-link"><i data-lucide="layout-grid"></i> Hub</a>
-                <a href="/classification" class="nav-link"><i data-lucide="layers"></i> Classification</a>
+                <a href="/classification" class="nav-link"><i data-lucide="layers"></i> Intelligence</a>
                 <a href="/analytics" class="nav-link active"><i data-lucide="bar-chart-2"></i> Stats</a>
                 <a href="/family" class="nav-link"><i data-lucide="users"></i> Family</a>
+                <a href="/history" class="nav-link"><i data-lucide="history"></i> History</a>
             </div>
             <div class="nav-right">
-                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
-                    <i data-lucide="download" style="width: 14px;"></i> Install App
-                </button>
-                <button class="nav-icon-btn">
-                    <i data-lucide="bell"></i>
-                    <span class="notification-badge"></span>
-                </button>
-                <a href="/profile" class="nav-icon-btn">
-                    <i data-lucide="settings"></i>
-                </a>
-                <a href="/profile" class="nav-icon-btn" style="background: var(--surface-container-low); color: var(--primary);">
-                    <i data-lucide="user"></i>
-                </a>
-                <a href="/logout" class="nav-icon-btn text-danger" title="Logout">
-                    <i data-lucide="log-out"></i>
-                </a>
+                <div style="display: flex; gap: 4px; margin-right: 8px;">
+                    <button onclick="setLanguage('en')" id="btn-en" class="btn" style="padding: 4px 8px; font-size: 0.65rem;">EN</button>
+                    <button onclick="setLanguage('kn')" id="btn-kn" class="btn" style="padding: 4px 8px; font-size: 0.65rem; background: #e0e0e0; color: #666;">KN</button>
+                </div>
+                <a href="/settings" class="nav-icon-btn"><i data-lucide="settings"></i></a>
+                <a href="/logout" class="nav-icon-btn text-danger"><i data-lucide="log-out"></i></a>
             </div>
         </div>
     </nav>
@@ -52,8 +43,8 @@
     <main class="main-content animate-fade-in">
         <header class="editorial-header">
             <span class="editorial-cap">Intelligence Engine</span>
-            <h1 style="font-size: 3rem; margin: 0;">Security Analytics</h1>
-            <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">Visualizing threat vectors and system performance across all channels.</p>
+            <h1 id="tour-hub-title">Security Analytics</h1>
+            <p style="color: var(--text-muted); font-size: 1rem; margin-top: 8px;">Visualizing threat vectors and system performance across all channels.</p>
         </header>
 
         <div class="layout-section">

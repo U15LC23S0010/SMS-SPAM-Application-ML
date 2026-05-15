@@ -20,10 +20,15 @@
             max-width: 440px;
             background: var(--surface-container-lowest);
             border-radius: var(--radius-xl);
-            padding: 48px;
+            padding: 32px 24px;
             border: 1px solid var(--outline-variant);
-            box-shadow: var(--shadow-ambient);
+            box-shadow: var(--shadow-md);
             text-align: center;
+        }
+        @media (min-width: 768px) {
+            .auth-card {
+                padding: 48px;
+            }
         }
         .auth-logo {
             width: 72px;

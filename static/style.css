@@ -1,23 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap');
 
 :root {
-    /* SpamShield AI - Ethereal Design Tokens */
+    /* Message Guardian - Premium Design System */
     --primary: #0061ff;
     --primary-light: #e6f0ff;
     --primary-dark: #004dc7;
     --accent: #5e5ce6;
     
-    --bg-app: #f0f2f5;
+    --bg-app: #f8faff;
     --bg-card: #ffffff;
-    --bg-sidebar: rgba(240, 242, 245, 0.82);
+    --bg-sidebar: rgba(255, 255, 255, 0.9);
     --primary-container: #004dc7;
-    --surface: #f0f2f5;
-    --surface-container-low: #e9ecef;
+    --surface: #f8faff;
+    --surface-container-low: #f0f2f5;
     --surface-container-lowest: #ffffff;
     --radius-chat: 24px 24px 24px 4px;
     
     --text-main: #1d1d1f;
-    --text-muted: #86868b;
+    --text-muted: #6e6e73;
     --text-on-primary: #ffffff;
     
     --success: #34c759;
@@ -26,6 +26,7 @@
     --info: #007aff;
     
     --radius-full: 9999px;
+    --radius-2xl: 40px;
     --radius-xl: 32px;
     --radius-lg: 24px;
     --radius-md: 16px;
@@ -105,22 +106,27 @@ h1, h2, h3, h4, .headline {
     animation: pulse 2s infinite;
 }
 
-/* --- TOP NAVIGATION (Glassmorphism) --- */
+/* --- TOP NAVIGATION --- */
 .top-nav {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
-    height: 80px;
-    background: rgba(241, 243, 246, 0.85);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    height: var(--header-height);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border-bottom: 1px solid rgba(0,0,0,0.05);
     display: flex;
     align-items: center;
-    justify-content: center;
-    padding: 0 40px;
+    padding: 0 20px;
     z-index: 1000;
+}
+
+@media (min-width: 768px) {
+    .top-nav {
+        padding: 0 40px;
+    }
 }
 
 .nav-wrapper {
@@ -129,6 +135,7 @@ h1, h2, h3, h4, .headline {
     align-items: center;
     width: 100%;
     max-width: 1400px;
+    margin: 0 auto;
 }
 
 .nav-container {
@@ -137,6 +144,7 @@ h1, h2, h3, h4, .headline {
     align-items: center;
     overflow-x: auto;
     scrollbar-width: none;
+    -ms-overflow-style: none;
 }
 .nav-container::-webkit-scrollbar { display: none; }
 
@@ -265,11 +273,18 @@ h1, h2, h3, h4, .headline {
 
 /* --- LAYOUT STRUCTURE --- */
 .main-content {
-    margin-top: var(--nav-height);
-    padding: 40px 24px;
+    margin-top: var(--header-height);
+    padding: 24px 16px;
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .main-content {
+        padding: 40px 24px;
+    }
 }
 
 .layout-section {
@@ -366,13 +381,78 @@ h1, h2, h3, h4, .headline {
 /* --- DASHBOARD GRID --- */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 24px;
+    grid-template-columns: 1fr;
+    gap: 16px;
 }
 
-@media (max-width: 768px) {
-    .dashboard-grid { grid-template-columns: 1fr; }
-    .main-content { padding: 24px 16px; }
+@media (min-width: 640px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 24px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* --- EDITORIAL HEADER --- */
+.editorial-header {
+    margin-bottom: 32px;
+    text-align: center;
+}
+
+@media (max-width: 767px) {
+    .nav-wrapper { padding: 0 16px; }
+    .nav-container { 
+        gap: 8px;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+    /* Hide scrollbar for clean look */
+    .nav-container::-webkit-scrollbar { display: none; }
+    .nav-container { -ms-overflow-style: none; scrollbar-width: none; }
+    
+    .nav-link { 
+        padding: 8px 12px; 
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    .nav-right { gap: 8px; }
+    .nav-icon-btn { width: 36px; height: 36px; }
+
+    .main-content { padding: 100px 16px 40px; }
+    .editorial-header { margin-bottom: 32px; }
+    .editorial-header h1 { font-size: 2.2rem; }
+}
+
+@media (min-width: 768px) {
+    .editorial-header {
+        text-align: left;
+    }
+}
+
+.editorial-header h1 {
+    font-size: 2.5rem;
+    line-height: 1.1;
+}
+
+@media (min-width: 768px) {
+    .editorial-header h1 {
+        font-size: 3.5rem;
+    }
+}
+
+.editorial-cap {
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: var(--primary);
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    display: block;
 }
 
 /* --- UTILITIES --- */
