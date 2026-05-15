@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background: #0A0A0B;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        .login-card {
+            background: #141417;
+            padding: 48px;
+            border-radius: 32px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .input-group {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        .input-group label {
+            display: block;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        .admin-input {
+            width: 100%;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 14px;
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .admin-input:focus {
+            border-color: var(--primary);
+            background: rgba(255,255,255,0.05);
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+    <div class="login-card">
+        <div style="background: var(--primary); width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px;">
+            <i data-lucide="shield-check" style="color: white; width: 32px; height: 32px;"></i>
+        </div>
+        <h2 style="color: white; font-family: 'Manrope', sans-serif; font-weight: 800; margin-bottom: 8px;">Admin Auth</h2>
+        <p style="color: rgba(255,255,255,0.4); font-size: 0.9rem; margin-bottom: 40px;">Secondary verification required for node access.</p>
+        
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div style="background: rgba(255,59,48,0.1); color: #FF3B30; padding: 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 24px; border: 1px solid rgba(255,59,48,0.2);">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="/admin-vault-auth" method="POST">
+            <div class="input-group">
+                <label>ADMIN USERNAME</label>
+                <input type="text" name="admin_username" class="admin-input" required autocomplete="off">
+            </div>
+            <div class="input-group">
+                <label>SYSTEM PASSWORD</label>
+                <input type="password" name="admin_password" class="admin-input" required autocomplete="new-password">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 16px; font-weight: 700;">Verify & Enter</button>
+        </form>
+        
+        <a href="/" style="display: block; margin-top: 24px; color: rgba(255,255,255,0.3); text-decoration: none; font-size: 0.8rem;">Return to Main Login</a>
+    </div>
+
+    <script>lucide.createIcons();</script>
+</body>
+</html>

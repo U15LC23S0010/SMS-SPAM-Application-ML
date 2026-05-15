@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classification | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .feed-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 32px; }
+        .feed-column { display: flex; flex-direction: column; gap: 24px; }
+        .column-header { display: flex; align-items: center; gap: 12px; font-weight: 800; text-transform: uppercase; font-size: 0.8rem; padding-bottom: 16px; border-bottom: 2px solid var(--surface-container-low); letter-spacing: 0.1em; }
+        .feed-card { border-left: 6px solid transparent; }
+        .feed-card.spam { border-left-color: var(--danger); background: var(--surface-container-lowest); }
+        .feed-card.ham { border-left-color: var(--success); background: var(--surface-container-lowest); }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-wrapper">
+            <div class="nav-container">
+                <a href="/dashboard" class="nav-link"><i data-lucide="layout-grid"></i> Hub</a>
+                <a href="/classification" class="nav-link active"><i data-lucide="layers"></i> Classification</a>
+                <a href="/analytics" class="nav-link"><i data-lucide="bar-chart-2"></i> Stats</a>
+                <a href="/family" class="nav-link"><i data-lucide="users"></i> Family</a>
+            </div>
+            <div class="nav-right">
+                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
+                    <i data-lucide="download" style="width: 14px;"></i> Install App
+                </button>
+                <button class="nav-icon-btn">
+                    <i data-lucide="bell"></i>
+                    <span class="notification-badge"></span>
+                </button>
+                <a href="/profile" class="nav-icon-btn">
+                    <i data-lucide="settings"></i>
+                </a>
+                <a href="/profile" class="nav-icon-btn" style="background: var(--surface-container-low); color: var(--primary);">
+                    <i data-lucide="user"></i>
+                </a>
+                <a href="/logout" class="nav-icon-btn text-danger" title="Logout">
+                    <i data-lucide="log-out"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content animate-fade-in">
+        <header class="editorial-header">
+            <span class="editorial-cap">Security Logs</span>
+            <h1 style="font-size: 3rem; margin: 0;">Threat Feed</h1>
+            <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">Real-time classification of incoming communication payloads.</p>
+        </header>
+
+        <div class="layout-section">
+            <div class="feed-container">
+            <!-- SPAM COLUMN -->
+            <div class="feed-column">
+                <div class="column-header" style="color: var(--danger);">
+                    <i data-lucide="alert-triangle"></i> Identified Threats
+                </div>
+                {% for scan in messages if scan.prediction in ['Spam', 'Fake'] %}
+                <div class="bento-card feed-card spam">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                        <span style="font-size: 0.7rem; font-weight: 800; color: var(--danger); text-transform: uppercase;">{{ scan.scan_type }}</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">{{ scan.timestamp }}</span>
+                    </div>
+                    <p style="font-weight: 700; margin-bottom: 16px; color: var(--on-surface); line-height: 1.4;">"{{ scan.content[:200] }}..."</p>
+                    <div style="padding: 16px; background: var(--surface-container-low); border-radius: 16px; font-size: 0.85rem; color: var(--on-surface-variant);">
+                        <p style="margin-bottom: 8px;"><strong>EN:</strong> {{ scan.explanation }}</p>
+                        {% if scan.explanation_kn %}
+                        <p style="border-top: 1px solid rgba(0,0,0,0.05); padding-top: 8px;"><strong>KN:</strong> {{ scan.explanation_kn }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- HAM COLUMN -->
+            <div class="feed-column">
+                <div class="column-header" style="color: var(--success);">
+                    <i data-lucide="check-circle"></i> Verified Content
+                </div>
+                {% for scan in messages if scan.prediction not in ['Spam', 'Fake'] %}
+                <div class="bento-card feed-card ham">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                        <span style="font-size: 0.7rem; font-weight: 800; color: var(--success); text-transform: uppercase;">{{ scan.scan_type }}</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted);">{{ scan.timestamp }}</span>
+                    </div>
+                    <p style="font-weight: 700; margin-bottom: 16px; color: var(--on-surface); line-height: 1.4;">"{{ scan.content[:200] }}..."</p>
+                    <div style="padding: 16px; background: var(--surface-container-low); border-radius: 16px; font-size: 0.85rem; color: var(--on-surface-variant);">
+                        Successfully verified as legitimate content. No threats detected.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        if (localStorage.getItem('guardian_theme') === 'carbon-dark') {
+            document.body.classList.add('carbon-dark');
+        }
+    </script>
+<script src="{{ url_for('static', filename='pwa.js') }}"></script></body>
+</html>

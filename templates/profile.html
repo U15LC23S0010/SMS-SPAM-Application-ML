@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .profile-container { max-width: 900px; margin: 0 auto; }
+        .hero-section { 
+            display: flex; align-items: center; gap: 32px; padding: 48px; 
+            background: var(--surface-container-lowest); border-radius: var(--radius-xl); 
+            border: 1px solid var(--outline-variant); margin-bottom: 32px; 
+        }
+        .avatar { 
+            width: 96px; height: 96px; border-radius: 24px; 
+            background: linear-gradient(135deg, var(--primary), var(--primary-container)); color: white; display: flex; 
+            align-items: center; justify-content: center; font-size: 2.2rem; font-weight: 800; font-family: 'Manrope', sans-serif;
+            box-shadow: 0 10px 20px rgba(0, 75, 202, 0.15);
+        }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .form-group { margin-bottom: 24px; }
+        .label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 10px; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; }
+        @media (max-width: 600px) {
+            .hero-section { flex-direction: column; text-align: center; padding: 30px 20px; gap: 20px; }
+            .form-grid { grid-template-columns: 1fr; gap: 16px; }
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-wrapper">
+            <div class="nav-container">
+                <a href="/dashboard" class="nav-link"><i data-lucide="layout-grid"></i> Hub</a>
+                <a href="/classification" class="nav-link"><i data-lucide="layers"></i> Classification</a>
+                <a href="/analytics" class="nav-link"><i data-lucide="bar-chart-2"></i> Stats</a>
+                <a href="/family" class="nav-link"><i data-lucide="users"></i> Family</a>
+                <a href="/history" class="nav-link"><i data-lucide="history"></i> History</a>
+            </div>
+            <div class="nav-right">
+                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
+                    <i data-lucide="download" style="width: 14px;"></i> Install App
+                </button>
+                <button class="nav-icon-btn" onclick="toggleNotifications(event)">
+                    <i data-lucide="bell"></i>
+                    <span id="notif-badge" class="notification-badge"></span>
+                </button>
+                <div id="notif-dropdown" class="notif-dropdown">
+                    <div class="notif-header">
+                        <h4 style="margin:0;">Security Alerts</h4>
+                        <span onclick="clearNotifications()" style="font-size:0.75rem; color:var(--primary); cursor:pointer; font-weight:700;">Clear All</span>
+                    </div>
+                    <div class="notif-body" id="notif-items-container">
+                        <!-- Dynamic Notifications -->
+                    </div>
+                    <div style="padding:16px; border-top:1px solid var(--outline-variant); text-align:center;">
+                        <a href="/history" style="font-size:0.85rem; color:var(--primary); text-decoration:none; font-weight:700;">Review Full Audit Log</a>
+                    </div>
+                </div>
+                <a href="/settings" class="nav-icon-btn">
+                    <i data-lucide="settings"></i>
+                </a>
+                <a href="/profile" class="nav-icon-btn active" style="background: var(--primary); color: white;">
+                    <i data-lucide="user"></i>
+                </a>
+                <a href="/logout" class="nav-icon-btn text-danger" title="Logout">
+                    <i data-lucide="log-out"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <main class="main-content animate-fade-in">
+        <div class="profile-container">
+            <header class="editorial-header">
+                <span class="editorial-cap">Identity Node</span>
+                <h1 style="font-size: 3rem; margin: 0;">Account Settings</h1>
+                <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">Viewing and managing your secure identity profile.</p>
+            </header>
+
+            <div class="hero-section">
+                <div class="avatar">{{ user['name'][0].upper() }}</div>
+                <div style="flex: 1;">
+                    <h2 style="margin: 0; font-weight: 800; font-size: 1.8rem;">{{ user['name'] }}</h2>
+                    <p style="color: var(--on-surface-variant); margin: 8px 0; font-size: 1.1rem;">{{ user['email'] }}</p>
+                </div>
+                <a href="/dashboard?reset_tour=1" class="btn" style="background: var(--surface-container-low); color: var(--primary);">Retake Guide</a>
+            </div>
+
+            <div class="bento-card">
+                <form method="POST">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="label">Full Name</label>
+                            <input type="text" name="name" class="form-input" value="{{ user['name'] }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="label">Email Address</label>
+                            <input type="email" class="form-input" value="{{ user['email'] }}" readonly style="background: #F8F9FA;">
+                        </div>
+                        <div class="form-group">
+                            <label class="label">Phone Number</label>
+                            <input type="tel" name="phone" class="form-input" value="{{ user['phone'] or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label class="label">WhatsApp Number</label>
+                            <input type="tel" name="whatsapp_number" class="form-input" value="{{ user['whatsapp_number'] or '' }}" placeholder="+919876543210">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">Living Address</label>
+                        <input type="text" name="address" class="form-input" value="{{ user['address'] or '' }}">
+                    </div>
+
+                    <div style="margin-top: 30px; display: flex; justify-content: flex-end;">
+                        <button type="submit" class="btn btn-primary" style="padding: 14px 40px;">Update Identity</button>
+                    </div>
+                </form>
+            </div>
+
+
+            <div class="bento-card" style="margin-top: 32px; background: #fff5f5; border-color: #ffdad6;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="color: var(--danger); margin: 0; font-size: 1.1rem;">Risk: Account Deletion</h4>
+                        <p style="font-size: 0.9rem; color: var(--on-surface-variant); margin: 8px 0;">Permanently destroy your identity node and all associated historical data.</p>
+                    </div>
+                    <button onclick="confirmDelete()" class="btn" style="background: white; color: var(--danger); border: 1px solid #ffdad6;">Initialize Wipe</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        if (localStorage.getItem('guardian_theme') === 'carbon-dark') {
+            document.body.classList.add('carbon-dark');
+        }
+        
+        function confirmDelete() {
+            if (confirm("CRITICAL: Permanently wipe all data from this node? This action is irreversible.")) {
+                window.location.href = "/api/delete_account";
+            }
+        }
+
+        /* --- NOTIFICATION CONTROLLER --- */
+        const mockNotifications = [
+            { type: 'danger', title: 'System Warning', text: 'Spam QR payload detected in last scan.', time: '2m ago', icon: 'shield-alert' },
+            { type: 'info', title: 'Security Tip', text: 'Enable 2FA in settings for enhanced protection.', time: '1h ago', icon: 'info' }
+        ];
+
+        function toggleNotifications(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('notif-dropdown');
+            const isVisible = dropdown.style.display === 'flex';
+            dropdown.style.display = isVisible ? 'none' : 'flex';
+            
+            if (!isVisible) renderNotifications();
+        }
+
+        function renderNotifications() {
+            const container = document.getElementById('notif-items-container');
+            if (mockNotifications.length === 0) {
+                container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--on-surface-variant);">
+                    <i data-lucide="bell-off" style="width:32px; height:32px; margin-bottom:12px; opacity:0.5;"></i>
+                    <p style="font-size:0.9rem;">No new alerts.</p>
+                </div>`;
+                document.getElementById('notif-badge').style.display = 'none';
+            } else {
+                container.innerHTML = mockNotifications.map(n => `
+                    <div class="notif-item">
+                        <div class="notif-icon-circle" style="color: var(--${n.type})">
+                            <i data-lucide="${n.icon}" style="width:18px; height:18px;"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                                <p style="font-weight:700; margin:0; font-size:0.95rem;">${n.title}</p>
+                                <span style="font-size:0.75rem; color:var(--on-surface-variant);">${n.time}</span>
+                            </div>
+                            <p style="margin:4px 0 0; font-size:0.85rem; color:var(--on-surface-variant); line-height:1.4;">${n.text}</p>
+                        </div>
+                    </div>
+                `).join('');
+                document.getElementById('notif-badge').style.display = 'block';
+            }
+            lucide.createIcons();
+        }
+
+        function clearNotifications() {
+            mockNotifications.length = 0;
+            renderNotifications();
+        }
+
+        window.addEventListener('click', () => {
+            document.getElementById('notif-dropdown').style.display = 'none';
+        });
+
+        if (mockNotifications.length > 0) {
+            document.getElementById('notif-badge').style.display = 'block';
+        }
+
+        /* --- SETTINGS ACTIONS --- */
+        function handleSettingChange(label, value) {
+            let status = (typeof value === 'boolean') ? (value ? 'Enabled' : 'Disabled') : value;
+            showToast(`${label} updated to: ${status}`, 'success');
+        }
+
+        function showToast(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            
+            const icon = type === 'success' ? 'check-circle' : 'info';
+            const color = type === 'success' ? 'var(--success)' : 'var(--primary)';
+
+            toast.innerHTML = `
+                <i data-lucide="${icon}" style="color: ${color}; width:20px; height:20px;"></i>
+                <span style="font-size:0.9rem; font-weight:600;">${message}</span>
+            `;
+            
+            container.appendChild(toast);
+            lucide.createIcons();
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+<script src="{{ url_for('static', filename='pwa.js') }}"></script></body>
+</html>

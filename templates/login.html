@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: var(--surface);
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 440px;
+            background: var(--surface-container-lowest);
+            border-radius: var(--radius-xl);
+            padding: 48px;
+            border: 1px solid var(--outline-variant);
+            box-shadow: var(--shadow-ambient);
+            text-align: center;
+        }
+        .auth-logo {
+            width: 72px;
+            height: 72px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-container));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 32px;
+            color: white;
+            box-shadow: 0 10px 20px rgba(0, 75, 202, 0.2);
+        }
+        .label { display: block; font-size: 0.8rem; font-weight: 800; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--on-surface-variant); text-align: left; }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/static/icon-192x192.png">
+</head>
+<body class="animate-fade-in">
+    <div class="auth-card">
+        <div class="auth-logo">
+            <i data-lucide="shield-check" style="width: 32px; height: 32px;"></i>
+        </div>
+        <h1 style="font-size: 2.2rem; margin-bottom: 8px;">Welcome Back</h1>
+        <p style="color: var(--on-surface-variant); margin-bottom: 40px; font-size: 1.1rem;">Access your security node.</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div style="background: #FFE5E5; color: var(--danger); padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem;">
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <div style="margin-bottom: 24px;">
+                <label class="label">Email Address</label>
+                <input type="email" name="email" class="form-input" placeholder="name@email.com" required autofocus autocomplete="email">
+            </div>
+            <div style="margin-bottom: 40px;">
+                <label class="label">Password</label>
+                <input type="password" name="password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                Sign In <i data-lucide="arrow-right"></i>
+            </button>
+        </form>
+
+        <p style="margin-top: 30px; font-size: 0.9rem; color: var(--text-muted);">
+            No account? <a href="/register" style="color: var(--primary); text-decoration: none; font-weight: 600;">Register here</a>
+        </p>
+    </div>
+    <script>lucide.createIcons();</script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister().then(function() { console.log('SW unregistered'); });
+                }
+            });
+        }
+    </script>
+</body>
+</html>

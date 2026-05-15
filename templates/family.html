@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Protection | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body class="animate-fade-in">
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-wrapper">
+            <div class="nav-container">
+                <a href="/dashboard" class="nav-link"><i data-lucide="layout-grid"></i> Hub</a>
+                <a href="/classification" class="nav-link"><i data-lucide="layers"></i> Intelligence</a>
+                <a href="/analytics" class="nav-link"><i data-lucide="bar-chart-2"></i> Stats</a>
+                <a href="/family" class="nav-link active"><i data-lucide="users"></i> Family</a>
+                <a href="/history" class="nav-link"><i data-lucide="history"></i> History</a>
+            </div>
+            <div class="nav-right">
+                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
+                    <i data-lucide="download" style="width: 14px;"></i> Install App
+                </button>
+                <a href="/dashboard" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.8rem;">Back to Hub</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="editorial-header">
+            <span class="editorial-cap">Security Collaboration</span>
+            <h1 style="font-size: 3rem; margin: 0;">Family Protection</h1>
+            <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">Monitor and secure your family members' communications in real-time.</p>
+        </header>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 48px;">
+            <div class="bento-card">
+                <div class="section-title"><i data-lucide="user-plus"></i> Add New Member</div>
+                <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 24px;">
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">MEMBER EMAIL</label>
+                        <input type="email" id="member-email" class="form-input" placeholder="e.g. grandma@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-muted);">RELATIONSHIP</label>
+                        <input type="text" id="member-relation" class="form-input" placeholder="e.g. Grandma, Mother, Brother">
+                    </div>
+                    <button onclick="addMember()" class="btn btn-primary">Invite to Shield Circle</button>
+                    <p id="form-msg" style="font-size: 0.8rem; margin-top: 8px;"></p>
+                </div>
+            </div>
+
+            <div class="bento-card">
+                <div class="section-title"><i data-lucide="shield-check"></i> Protected Nodes</div>
+                <div style="margin-top: 24px; display: flex; flex-direction: column; gap: 12px;">
+                    {% if family_members %}
+                        {% for member in family_members %}
+                        <div style="padding: 16px; background: var(--surface-container-low); border-radius: 16px; display: flex; align-items: center; justify-content: space-between;">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 800;">
+                                    {{ member['member_email'][0] | upper }}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700;">{{ member['relationship'] }}</div>
+                                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ member['member_email'] }}</div>
+                                </div>
+                            </div>
+                            <span class="status-badge {{ member['status'] }}" style="font-size: 0.75rem; font-weight: 800; padding: 4px 12px; border-radius: 20px;">
+                                {{ member['status'] | upper }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                            <i data-lucide="users" style="width: 48px; height: 48px; opacity: 0.2; margin-bottom: 12px;"></i>
+                            <p>No family members protected yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <style>
+        .status-badge.pending { background: #fff8e1; color: #f57f17; }
+        .status-badge.accepted { background: #e8f5e9; color: #2e7d32; }
+        .status-badge.rejected { background: #ffebee; color: #c62828; }
+    </style>
+
+    <script>
+        lucide.createIcons();
+        
+        async function addMember() {
+            const email = document.getElementById('member-email').value;
+            const relation = document.getElementById('member-relation').value;
+            const msg = document.getElementById('form-msg');
+            
+            if(!email) return;
+            
+            msg.innerText = "Sending invitation...";
+            msg.style.color = "var(--primary)";
+            
+            try {
+                const resp = await fetch('/api/family/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: email, relationship: relation })
+                });
+                const data = await resp.json();
+                if(data.success) {
+                    msg.innerText = "Invitation sent successfully!";
+                    msg.style.color = "var(--success)";
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    msg.innerText = "Error: " + data.error;
+                    msg.style.color = "var(--danger)";
+                }
+            } catch(e) {
+                msg.innerText = "Network failure.";
+                msg.style.color = "var(--danger)";
+            }
+        }
+    </script>
+<script src="{{ url_for('static', filename='pwa.js') }}"></script></body>
+</html>

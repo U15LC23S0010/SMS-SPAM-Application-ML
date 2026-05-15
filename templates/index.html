@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMS AI Platform | Secure Message Analysis</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Manrope', sans-serif;
+            font-weight: 800;
+        }
+
+        .hero-gradient {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-container) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+            background-image: radial-gradient(circle at 2px 2px, #3b82f6 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+
+        /* Mobile Phone Tutorial Animations */
+        .phone-mockup {
+            width: 320px;
+            height: 620px;
+            background: var(--surface-container-low);
+            border: 12px solid var(--on-surface);
+            border-radius: 48px;
+            margin: 60px auto;
+            position: relative;
+            box-shadow: 0 40px 100px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .phone-notch {
+            width: 140px;
+            height: 30px;
+            background: #0f172a;
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            z-index: 10;
+        }
+
+        .phone-header {
+            padding: 40px 20px 20px;
+            text-align: center;
+        }
+
+        .phone-time {
+            font-size: 2.5rem;
+            font-weight: 300;
+            color: #0f172a;
+        }
+
+        .notification {
+            position: absolute;
+            left: 16px;
+            right: 16px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 16px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transform: translateY(-150%);
+            opacity: 0;
+            z-index: 5;
+        }
+
+        .notif-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        .notif-body {
+            font-size: 0.95rem;
+            color: #0f172a;
+            line-height: 1.4;
+        }
+
+        .ai-shield {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 32px;
+            height: 32px;
+            background: #4f46e5;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.4);
+            opacity: 0;
+        }
+
+        .result-badge {
+            margin-top: 12px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        /* Span Animation */
+        .anim-spam {
+            animation: dropMessage 10s infinite;
+        }
+
+        .anim-spam .ai-shield {
+            animation: showShield 10s infinite;
+        }
+
+        .anim-spam .result-badge {
+            background: #fee2e2;
+            color: #ef4444;
+            border: 1px solid #fca5a5;
+            animation: showBadge 10s infinite;
+        }
+
+        /* Ham Animation (Offset by 5s) */
+        .anim-ham {
+            animation: dropMessage 10s 5s infinite;
+        }
+
+        .anim-ham .ai-shield {
+            animation: showShield 10s 5s infinite;
+        }
+
+        .anim-ham .result-badge {
+            background: #ecfdf5;
+            color: #10b981;
+            border: 1px solid #6ee7b7;
+            animation: showBadge 10s 5s infinite;
+        }
+
+        @keyframes dropMessage {
+
+            0%,
+            100% {
+                transform: translateY(-150%);
+                opacity: 0;
+            }
+
+            5%,
+            40% {
+                transform: translateY(40px);
+                opacity: 1;
+            }
+
+            45%,
+            95% {
+                transform: translateY(-150%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes showShield {
+
+            0%,
+            10%,
+            100% {
+                opacity: 0;
+                transform: scale(0) rotate(-45deg);
+            }
+
+            15%,
+            40% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+        }
+
+        @keyframes showBadge {
+
+            0%,
+            15%,
+            100% {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            20%,
+            40% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .reveal-1 {
+            animation-delay: 0.1s;
+        }
+
+        .reveal-2 {
+            animation-delay: 0.3s;
+        }
+
+        .reveal-3 {
+            animation-delay: 0.5s;
+        }
+
+        .reveal-4 {
+            animation-delay: 0.7s;
+        }
+
+        .floating-blob {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 97, 255, 0.08) 0%, transparent 70%);
+            z-index: -2;
+            border-radius: 50%;
+            animation: floatAround 20s infinite alternate;
+        }
+
+        @keyframes floatAround {
+            from {
+                transform: translate(0, 0) scale(1);
+            }
+
+            to {
+                transform: translate(100px, 50px) scale(1.2);
+            }
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/static/icon-192x192.png">
+</head>
+
+<body>
+    <div class="hero-bg"></div>
+    <div class="floating-blob" style="top: 10%; right: 10%;"></div>
+    <div class="floating-blob" style="bottom: 10%; left: 0; animation-duration: 30s;"></div>
+
+    <nav class="top-nav animate-reveal">
+        <div class="nav-container" style="justify-content: space-between; width: 100%; max-width: 1200px;">
+            <div
+                style="display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.5rem; letter-spacing: -2px; font-family: 'Manrope';">
+                <i data-lucide="shield-check" style="color: var(--primary); width: 32px; height: 32px;"></i>
+                Message<span style="color: var(--primary);">Guardian</span>
+            </div>
+            <div style="display: flex; gap: 32px; align-items: center;">
+                <a href="/login"
+                    style="color: var(--on-surface); text-decoration: none; font-weight: 700; font-size: 0.9rem;">Sign
+                    In</a>
+                <button id="pwa-install-btn" class="btn btn-primary pulsing-install"
+                    style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
+                    <i data-lucide="download" style="width: 14px;"></i> Install App
+                </button>
+                <a href="/register" class="btn btn-primary" style="padding: 10px 24px; font-size: 0.85rem;">Secure
+                    Access</a>
+            </div>
+        </div>
+    </nav>
+
+    <main style="max-width: 1200px; margin: 80px auto; padding: 0 40px; text-align: center;">
+        <div style="display: inline-block; padding: 12px 24px; border-radius: 20px 20px 20px 4px; background: white; border: 1px solid rgba(0,0,0,0.05); color: var(--primary); font-weight: 700; font-size: 0.9rem; margin-bottom: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);"
+            class="animate-bubble-pop">
+            <i data-lucide="message-circle" style="width: 16px; margin-right: 8px; vertical-align: middle;"></i> New
+            Security Directive Ready
+        </div>
+        <h1 style="font-size: 4.5rem; line-height: 1.1; margin-bottom: 32px; letter-spacing: -5px;" class="typing-text">
+            Shielding Your <span class="hero-gradient">Messages.</span>
+        </h1>
+        <p
+            style="font-size: 1.2rem; color: var(--on-surface-variant); max-width: 600px; margin: 0 auto 48px; line-height: 1.6;">
+            Predicting, analyzing, and defending your communication nodes with high-fidelity machine learning models.
+        </p>
+        <div style="display: flex; gap: 16px; justify-content: center;" class="animate-reveal reveal-2">
+            <a href="/register" class="btn btn-primary" style="padding: 18px 48px; font-size: 1.1rem;">
+                Initialize Protection <i data-lucide="arrow-right"></i>
+            </a>
+            <a href="#features" class="btn"
+                style="padding: 18px 48px; font-size: 1.1rem; background: var(--surface-container-low); color: var(--on-surface-variant);">
+                See Protocol
+            </a>
+        </div>
+        </div>
+
+        <div id="features" style="margin-top: 80px;">
+            <h2 style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 16px;">How It Works
+            </h2>
+            <p style="color: var(--text-muted); font-size: 1.1rem; margin-bottom: 40px;">Three simple steps to secure
+                your digital life.</p>
+
+            <div class="phone-mockup animate-fade-in">
+                <div class="phone-notch"></div>
+                <div class="phone-header">
+                    <div class="phone-time">10:42</div>
+                    <div style="font-size: 0.9rem; color: #64748b; font-weight: 600;">Thursday, Oct 12</div>
+                </div>
+
+                <!-- Spam Notification Animation -->
+                <div class="notification anim-spam">
+                    <div class="ai-shield"><i data-lucide="shield-check" style="width: 18px; height: 18px;"></i></div>
+                    <div class="notif-header">
+                        <i data-lucide="message-square" style="width: 14px; height: 14px;"></i> Messages • Now
+                    </div>
+                    <div class="notif-body">
+                        <strong>Amazon Alert</strong><br>
+                        Your account is locked due to unusual activity. Click amz-auth.com/login to secure.
+                    </div>
+                    <div class="result-badge">
+                        <i data-lucide="shield-alert"
+                            style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></i>
+                        SPAM DETECTED
+                    </div>
+                </div>
+
+                <!-- Ham Notification Animation -->
+                <div class="notification anim-ham">
+                    <div class="ai-shield"><i data-lucide="shield-check" style="width: 18px; height: 18px;"></i></div>
+                    <div class="notif-header">
+                        <i data-lucide="message-square" style="width: 14px; height: 14px;"></i> Messages • Now
+                    </div>
+                    <div class="notif-body">
+                        <strong>Mom</strong><br>
+                        Hey sweetie, are we still on for lunch tomorrow? I can pick you up at 1.
+                    </div>
+                    <div class="result-badge">
+                        <i data-lucide="check-circle-2"
+                            style="width: 12px; height: 12px; vertical-align: middle; margin-right: 4px;"></i>
+                        HAM (SAFE)
+                    </div>
+                </div>
+
+                <!-- Mock Apps -->
+                <div
+                    style="position: absolute; bottom: 20px; left: 20px; right: 20px; display: flex; justify-content: space-around;">
+                    <div style="width: 50px; height: 50px; background: #3b82f6; border-radius: 14px;"></div>
+                    <div style="width: 50px; height: 50px; background: #10b981; border-radius: 14px;"></div>
+                    <div style="width: 50px; height: 50px; background: #8b5cf6; border-radius: 14px;"></div>
+                    <div style="width: 50px; height: 50px; background: #f43f5e; border-radius: 14px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div
+            style="margin-top: 80px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px;">
+            <div class="bento-card animate-bubble-pop" style="text-align: left; border-radius: var(--radius-chat);">
+                <div
+                    style="width: 56px; height: 56px; border-radius: 12px; background: var(--surface-container-low); display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                    <i data-lucide="zap" style="color: var(--primary);"></i>
+                </div>
+                <h3 style="margin-bottom: 12px;">Instant Prediction</h3>
+                <p style="color: var(--on-surface-variant);">Messages are analyzed as they arrive, providing immediate
+                    security ratings.</p>
+            </div>
+            <div class="bento-card animate-bubble-pop"
+                style="text-align: left; border-radius: var(--radius-chat); animation-delay: 0.2s;">
+                <div
+                    style="width: 56px; height: 56px; border-radius: 12px; background: var(--surface-container-low); display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                    <i data-lucide="bar-chart-3" style="color: var(--success);"></i>
+                </div>
+                <h3 style="margin-bottom: 12px;">Smart Analytics</h3>
+                <p style="color: var(--on-surface-variant);">Detailed charts and history logs to track your security
+                    perimeter.</p>
+            </div>
+            <div class="bento-card animate-bubble-pop"
+                style="text-align: left; border-radius: var(--radius-chat); animation-delay: 0.4s;">
+                <div
+                    style="width: 56px; height: 56px; border-radius: 12px; background: var(--surface-container-low); display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                    <i data-lucide="lock" style="color: var(--danger);"></i>
+                </div>
+                <h3 style="margin-bottom: 12px;">Data Privacy</h3>
+                <p style="color: var(--on-surface-variant);">End-to-end encrypted processing ensures your data stays
+                    your property.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>lucide.createIcons();</script>
+    <script src="{{ url_for('static', filename='pwa.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .chat-bubble-ai { background: var(--surface-container-low); padding: 16px; border-radius: 12px 12px 12px 2px; font-size: 0.9rem; }
+        .chat-bubble-user { background: var(--primary); color: white; padding: 16px; border-radius: 12px 12px 2px 12px; font-size: 0.9rem; margin-left: auto; }
+        .notif-dropdown { top: 70px; right: 40px; }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/png" href="/static/icon-192x192.png">
+</head>
+<body data-has-seen-tour="{{ user['has_seen_tour'] }}">
+    <!-- Message Sync Sequence (WOW Entry) -->
+    <div id="nexus-boot" class="nexus-overlay" style="background: #ffffff; z-index: 9999;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 24px;">
+            <div class="pulsing-shield">
+                <i data-lucide="shield-check" style="width: 64px; height: 64px; color: var(--primary);"></i>
+            </div>
+            <div style="text-align: center;">
+                <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0; color: var(--text-main);">Message Guardian</h2>
+                <p id="boot-status" style="font-size: 0.9rem; color: var(--text-muted); margin-top: 8px;">Getting things ready for you...</p>
+            </div>
+            <div style="width: 200px; height: 4px; background: #f0f0f0; border-radius: 10px; overflow: hidden;">
+                <div class="boot-progress-simple"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spotlight Backdrop -->
+    <div id="spotlight-teacher" class="spotlight-teacher"></div>
+
+    <!-- Guardian Teacher Overlay -->
+    <div id="teacher-container" class="teacher-container">
+        <div id="teacher-bubble" class="teacher-bubble">
+            <h3 id="teacher-title">Ready?</h3>
+            <p id="teacher-text">I'm your Security Mentor. Let's get started!</p>
+            <div id="teacher-example" class="teacher-example-badge" style="display: none;">Live Demo Active</div>
+            <div class="teacher-controls">
+                <button id="teacher-skip" onclick="skipTour()" class="teacher-btn teacher-btn-skip">Skip</button>
+                <button id="teacher-next" onclick="nextTourStep()" class="teacher-btn teacher-btn-next">Continue</button>
+            </div>
+        </div>
+        <div class="teacher-avatar-wrapper">
+            <div class="teacher-avatar">
+                <i data-lucide="shield" style="width: 48px; height: 48px;"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-wrapper">
+            <div class="nav-container">
+                <a href="/dashboard" class="nav-link active"><i data-lucide="layout-grid"></i> Hub</a>
+                <a href="/classification" class="nav-link"><i data-lucide="layers"></i> Intelligence</a>
+                <a href="/analytics" class="nav-link"><i data-lucide="bar-chart-2"></i> Stats</a>
+                <a href="/family" class="nav-link"><i data-lucide="users"></i> Family</a>
+                <a href="/history" class="nav-link"><i data-lucide="history"></i> History</a>
+                {% if user.is_admin %}
+                <a href="/admin" class="nav-link" style="color: var(--danger);"><i data-lucide="shield-alert"></i> Admin Hub</a>
+                {% endif %}
+            </div>
+            <div class="nav-right">
+                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
+                    <i data-lucide="download" style="width: 14px;"></i> Install App
+                </button>
+                <div style="display: flex; gap: 8px; margin-right: 12px;">
+                    <button onclick="setLanguage('en')" id="btn-en" class="btn" style="padding: 6px 12px; font-size: 0.7rem;">EN</button>
+                    <button onclick="setLanguage('kn')" id="btn-kn" class="btn" style="padding: 6px 12px; font-size: 0.7rem; background: #e0e0e0; color: #666;">ಕನ್ನಡ</button>
+                </div>
+                <button class="nav-icon-btn" onclick="startTourManual()" title="App Guide">
+                    <i data-lucide="help-circle"></i>
+                </button>
+                <button class="nav-icon-btn" onclick="toggleNotifications(event)">
+                    <i data-lucide="bell"></i>
+                    <span id="notif-badge" class="notification-badge"></span>
+                </button>
+                <a href="/settings" class="nav-icon-btn"><i data-lucide="settings"></i></a>
+                <a href="/profile" class="nav-icon-btn"><i data-lucide="user"></i></a>
+                <a href="/logout" class="nav-icon-btn text-danger"><i data-lucide="log-out"></i></a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Notification Dropdown -->
+    <div id="notif-dropdown" class="notif-dropdown">
+        <div class="notif-header">
+            <h4 style="margin:0;">Interceptions</h4>
+            <span onclick="clearNotifications()" style="font-size:0.75rem; color:var(--primary); cursor:pointer;">Clear All</span>
+        </div>
+        <div class="notif-body" id="notif-items-container"></div>
+    </div>
+
+    <main class="main-content animate-reveal">
+        <!-- Editorial Header -->
+        <header class="editorial-header">
+            <span class="editorial-cap" data-t="welcome_msg">Welcome, {{ user['name'] }}</span>
+            <h1 id="tour-hub-title" style="font-size: 3rem; margin: 0;">Security Hub</h1>
+            <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">AI-assisted analysis of suspicious communications.</p>
+        </header>
+
+        <!-- Global Nuclear Alert -->
+        <div id="global-nuclear-alert" style="display: none; margin-bottom: 32px;">
+            <div class="bento-card" style="background: linear-gradient(135deg, #FF453A, #FF9F0A); border: none; color: white;">
+                <div style="display: flex; gap: 20px; align-items: center;">
+                    <i data-lucide="shield-alert"></i>
+                    <div style="flex: 1;">
+                        <h4 id="nuclear-title" style="margin: 0; color: white;"></h4>
+                        <p id="nuclear-message" style="margin: 4px 0 0 0; font-size: 0.85rem; color: white; opacity: 0.9;"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Email Card -->
+            <div class="bento-card animate-bubble-pop" id="tour-email-node" style="border-radius: var(--radius-chat); animation-delay: 0.1s;">
+                <div class="section-title"><i data-lucide="mail"></i> <span data-t="email_protection">Email Analysis</span></div>
+                <textarea id="email-content" class="form-input" style="min-height: 120px; margin-bottom: 20px;" placeholder="Paste email content here..."></textarea>
+                <div id="email-result" style="margin-bottom: 20px;"></div>
+                <button onclick="performScan('email')" class="btn btn-primary" style="width: 100%;" data-t="analyze_email">Run Scan</button>
+            </div>
+
+            <!-- SMS Card -->
+            <div class="bento-card animate-bubble-pop" id="tour-sms-node" style="border-radius: var(--radius-chat); animation-delay: 0.3s;">
+                <div class="section-title"><i data-lucide="message-square"></i> <span data-t="sms_verification">SMS & Smishing</span></div>
+                <textarea id="sms-content" class="form-input" style="min-height: 120px; margin-bottom: 20px;" placeholder="Paste SMS content here..."></textarea>
+                <div id="sms-result" style="margin-bottom: 20px;"></div>
+                <button onclick="performScan('sms')" class="btn btn-primary" style="width: 100%;" data-t="verify_code">Verify Content</button>
+            </div>
+
+            <!-- URL Card -->
+            <div class="bento-card animate-bubble-pop" id="tour-url-node" style="border-radius: var(--radius-chat); animation-delay: 0.5s;">
+                <div class="section-title"><i data-lucide="link"></i> <span data-t="link_analysis">URL Safety</span></div>
+                <input type="text" id="link-url" class="form-input" style="margin-bottom: 20px;" placeholder="https://suspicious-site.com">
+                <div id="url-result" style="margin-bottom: 20px;"></div>
+                <button onclick="performScan('url')" class="btn btn-primary" style="width: 100%;" data-t="check_link">Inspect Link</button>
+            </div>
+
+            <!-- QR Card -->
+            <div class="bento-card animate-bubble-pop" id="tour-qr-node" style="border-radius: var(--radius-chat); animation-delay: 0.7s;">
+                <div class="section-title"><i data-lucide="qr-code"></i> <span data-t="qr_protection">QR Payload</span></div>
+                <div id="qr-file-trigger" onclick="document.getElementById('qr-file').click()" style="border: 2px dashed var(--outline-variant); padding: 40px; text-align: center; margin-bottom: 20px; cursor: pointer; border-radius: 16px;">
+                    <i data-lucide="camera" style="margin-bottom: 8px;"></i>
+                    <p id="qr-filename" style="font-size: 0.8rem; font-weight: 700;">Upload QR Image</p>
+                    <input type="file" id="qr-file" style="display: none;" onchange="updateFileName('qr-file', 'qr-filename')">
+                </div>
+                <div id="qr_code-result" style="margin-bottom: 20px;"></div>
+                <button onclick="performScan('qr_code')" class="btn btn-primary" style="width: 100%;" data-t="verify_qr">Scan QR</button>
+            </div>
+
+            <!-- Voice Card -->
+            <div class="bento-card">
+                <div class="section-title"><i data-lucide="mic"></i> <span data-t="voice_shield">Speech Analysis</span></div>
+                <div style="background: var(--surface-container-low); padding: 32px; border-radius: 16px; text-align: center; margin-bottom: 20px;">
+                    <p id="voice-transcription" style="font-style: italic; font-size: 0.9rem;">Ready to listen...</p>
+                </div>
+                <div id="voice-result" style="margin-bottom: 20px;"></div>
+                <button id="voice-start-btn" onclick="startVoiceScan()" class="btn btn-primary" style="width: 100%;" data-t="start_speaking">Initialize Mic</button>
+            </div>
+
+            <!-- APK Card -->
+            <div class="bento-card animate-bubble-pop" id="tour-apk-node" style="animation-delay: 0.9s;">
+                <div class="section-title"><i data-lucide="package"></i> <span data-t="apk_security">App Binary Scan</span></div>
+                <div id="apk-file-trigger" onclick="document.getElementById('apk-file').click()" style="border: 2px dashed var(--outline-variant); padding: 40px; text-align: center; margin-bottom: 20px; cursor: pointer; border-radius: 16px;">
+                    <i data-lucide="package" style="margin-bottom: 8px;"></i>
+                    <p id="apk-filename" style="font-size: 0.8rem; font-weight: 700;">Upload APK File</p>
+                    <input type="file" id="apk-file" style="display: none;" onchange="updateFileName('apk-file', 'apk-filename')">
+                </div>
+                <div id="apk-result" style="margin-bottom: 20px;"></div>
+                <button onclick="performScan('apk')" class="btn btn-primary" style="width: 100%;" data-t="verify_apk">Inspect APK</button>
+            </div>
+
+            <!-- New Family Protection Card -->
+            <div class="bento-card" style="grid-column: span 1; background: linear-gradient(135deg, #f8f9fa, #ffffff);">
+                <div class="section-title"><i data-lucide="users"></i> <span data-t="family_protection">Family Protection</span></div>
+                <p style="font-size: 0.85rem; color: var(--on-surface-variant); margin-bottom: 16px;">Secure your loved ones by adding their numbers to your protection group.</p>
+                <div style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; padding-right: 4px;">
+                    {% if family %}
+                        {% for member in family %}
+                        <div style="padding: 12px; background: #fff; border-radius: 12px; border: 1px solid var(--outline-variant); display: flex; align-items: center; justify-content: space-between;">
+                            <div style="overflow: hidden;">
+                                <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); display: block; white-space: nowrap; text-overflow: ellipsis;">{{ member.member_email.split('@')[0] }}</span>
+                                <span style="font-size: 0.7rem; color: var(--text-muted);">{{ member.relationship }}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                {% if member.status == 'accepted' %}
+                                    <span style="font-size: 0.65rem; font-weight: 800; color: var(--success);">ACTIVE</span>
+                                    <i data-lucide="shield-check" style="width: 14px; color: var(--success);"></i>
+                                {% else %}
+                                    <span style="font-size: 0.65rem; font-weight: 800; color: var(--warning);">PENDING</span>
+                                    <i data-lucide="clock" style="width: 14px; color: var(--warning);"></i>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div style="padding: 20px; text-align: center; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px dashed var(--outline-variant);">
+                            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">No family nodes active.</p>
+                        </div>
+                    {% endif %}
+                </div>
+                <div style="margin-top: 12px;">
+                    <a href="/family" class="btn" style="width: 100%; border: 1px dashed var(--primary); color: var(--primary); background: transparent; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i data-lucide="plus" style="width: 14px;"></i> Add Family Member
+                    </a>
+                </div>
+            </div>
+
+            <!-- Global App Experience Card (Hidden by default) -->
+            <div id="app-feedback-card" class="bento-card animate-bubble-pop" style="display: none; background: linear-gradient(135deg, var(--primary), var(--accent)); color: white; border: none; grid-column: span 1;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div class="section-title" style="color: white;"><i data-lucide="heart" style="background: rgba(255,255,255,0.2); color: white;"></i> App Experience</div>
+                    <i data-lucide="x" onclick="closeFeedback()" style="cursor: pointer; opacity: 0.7;"></i>
+                </div>
+                <p style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 20px;">How are you liking Message Guardian so far?</p>
+                <div style="display: flex; gap: 12px; justify-content: center; margin-bottom: 10px;">
+                    <i data-lucide="star" onclick="submitAppRating(1)" class="app-star" style="cursor: pointer; width: 24px;"></i>
+                    <i data-lucide="star" onclick="submitAppRating(2)" class="app-star" style="cursor: pointer; width: 24px;"></i>
+                    <i data-lucide="star" onclick="submitAppRating(3)" class="app-star" style="cursor: pointer; width: 24px;"></i>
+                    <i data-lucide="star" onclick="submitAppRating(4)" class="app-star" style="cursor: pointer; width: 24px;"></i>
+                    <i data-lucide="star" onclick="submitAppRating(5)" class="app-star" style="cursor: pointer; width: 24px;"></i>
+                </div>
+                <p id="feedback-thanks" style="text-align: center; font-size: 0.8rem; font-weight: 700; display: none;">THANKS FOR YOUR SUPPORT!</p>
+            </div>
+
+            <!-- AUTO-PROTECT STATUS CARD -->
+            <div class="bento-card" style="grid-column: span 1; border: 1px solid var(--primary-light); background: linear-gradient(135deg, #ffffff, #f8faff);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                    <div class="section-title" style="margin-bottom: 0;"><i data-lucide="shield-check" style="background: var(--primary-light); color: var(--primary);"></i> Auto-Protect</div>
+                    <div id="monitoring-pulse" class="animate-pulse" style="width: 12px; height: 12px; background: var(--success); border-radius: 50%; box-shadow: 0 0 10px var(--success);"></div>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Real-time interception is active. Your device is being monitored for threats.</p>
+                
+                <div id="recent-intercept" style="background: var(--surface-container-low); padding: 12px; border-radius: 12px; font-size: 0.75rem; color: var(--text-main); margin-bottom: 20px; border-left: 3px solid var(--success);">
+                    <span style="opacity: 0.6;">Recently Checked:</span> <span id="last-intercept-text">Scanning traffic...</span>
+                </div>
+
+                <button id="notif-toggle-btn" onclick="requestNotificationPermission()" class="btn" style="width: 100%; background: var(--primary-light); color: var(--primary); font-size: 0.8rem; border: 1px solid var(--primary);">
+                    <i data-lucide="bell" style="width: 14px;"></i> Enable Smart Alerts
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Chatbot Widget -->
+    <button onclick="toggleChat()" style="position: fixed; bottom: 32px; right: 32px; width: 64px; height: 64px; border-radius: 50%; background: var(--primary); color: white; border: none; box-shadow: var(--shadow-lg); cursor: pointer; z-index: 1000; display: flex; align-items: center; justify-content: center;">
+        <i data-lucide="message-circle" style="width: 28px; height: 28px;"></i>
+    </button>
+
+    <div id="chatbot-container" style="display: none; position: fixed; bottom: 100px; right: 32px; width: 400px; height: 500px; background: white; border-radius: 24px; box-shadow: var(--shadow-lg); border: 1px solid var(--outline-variant); flex-direction: column; overflow: hidden; z-index: 1001; animation: slideUp 0.4s ease;">
+        <div style="background: var(--primary); color: white; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <i data-lucide="shield" style="width: 20px;"></i>
+                <span style="font-weight: 700;">Guardian AI</span>
+            </div>
+            <i data-lucide="x" onclick="toggleChat()" style="cursor: pointer; width: 20px;"></i>
+        </div>
+        <div id="chatContent" style="flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px;">
+            <div class="chat-bubble-ai">Hello! I'm your Security Guardian. How can I assist you today?</div>
+        </div>
+        <div style="padding: 20px; display: flex; gap: 8px;">
+            <input type="text" id="chatInput" class="form-input" placeholder="Ask anything..." onkeypress="if(event.key === 'Enter') handleChat()">
+            <button onclick="handleChat()" class="btn btn-primary" style="padding: 12px;"><i data-lucide="send" style="width: 18px;"></i></button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // --- REALISTIC GUARDIAN TEACHER ---
+        let currentStep = 0;
+        const steps = [
+            { 
+                title: "Welcome!", 
+                text: "Hi! I'm your Security Teacher. I'll show you how we keep your messages safe from scammers.", 
+                target: "#tour-hub-title",
+                demo: null
+            },
+            { 
+                title: "Check your Emails", 
+                text: "Paste any suspicious email here. I'll read it and tell you if it's a trick to steal your data.", 
+                target: "#tour-email-node",
+                demo: { id: "email-content", val: "URGENT: Your account will be closed. Click here to fix: http://fake-login.com" }
+            },
+            { 
+                title: "Mobile Safety", 
+                text: "Scammers love sending fake SMS. I look for dangerous links and warnings that try to scare you.", 
+                target: "#tour-sms-node",
+                demo: { id: "sms-content", val: "You won a $500 gift card! Claim it now: https://bit.ly/fake-win" }
+            },
+            { 
+                title: "Safe Links", 
+                text: "Before you click a website link, let me check it. I'll make sure the website is real and safe.", 
+                target: "#tour-url-node",
+                demo: { id: "link-url", val: "http://secure-login-paypal.net" }
+            },
+            { 
+                title: "Simple for Everyone", 
+                text: "ನೀವು ಕನ್ನಡದಲ್ಲೂ ಮಾಹಿತಿಯನ್ನು ಪಡೆಯಬಹುದು. ಭಾಷೆಯನ್ನು ಬದಲಾಯಿಸಲು ಇಲ್ಲಿ ಕ್ಲಿಕ್ ಮಾಡಿ.", 
+                target: "#btn-kn",
+                demo: null
+            },
+            { 
+                title: "Ready to Start!", 
+                text: "That's it! Use these tools whenever you're unsure about a message. Stay safe!", 
+                target: "#chatbot-trigger",
+                demo: null
+            }
+        ];
+
+        function startTourManual() {
+            localStorage.removeItem('message_guardian_tour_seen');
+            currentStep = 0;
+            document.getElementById('teacher-container').style.display = 'flex';
+            document.getElementById('spotlight-teacher').style.display = 'block';
+            updateTeacher();
+        }
+
+        async function updateTeacher() {
+            const step = steps[currentStep];
+            const bubble = document.getElementById('teacher-bubble');
+            const demoBadge = document.getElementById('teacher-example');
+            
+            bubble.classList.remove('show');
+            
+            setTimeout(async () => {
+                document.getElementById('teacher-title').innerText = step.title;
+                document.getElementById('teacher-text').innerText = step.text;
+                
+                // Manage Spotlight
+                document.querySelectorAll('.spotlight-active').forEach(el => el.classList.remove('spotlight-active'));
+                const target = document.querySelector(step.target);
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    target.classList.add('spotlight-active');
+                    
+                    // Positioning the teacher intelligently
+                    const rect = target.getBoundingClientRect();
+                    const container = document.getElementById('teacher-container');
+                    
+                    if (window.innerWidth > 1000) {
+                        // Desktop: Position near target but stay in bounds
+                        container.style.bottom = '40px'; // Keep it at a stable bottom
+                        container.style.right = '40px'; 
+                        
+                        // If target is on the right, move teacher to left to avoid overlap
+                        if (rect.left > window.innerWidth / 2) {
+                            container.style.right = 'auto';
+                            container.style.left = '40px';
+                            container.style.alignItems = 'flex-start';
+                            document.getElementById('teacher-bubble').style.borderRadius = '24px 24px 24px 4px';
+                        } else {
+                            container.style.right = '40px';
+                            container.style.left = 'auto';
+                            container.style.alignItems = 'flex-end';
+                            document.getElementById('teacher-bubble').style.borderRadius = '24px 24px 4px 24px';
+                        }
+                    } else {
+                        // Mobile: Reset to default bottom-right
+                        container.style.bottom = '20px';
+                        container.style.right = '20px';
+                        container.style.left = 'auto';
+                    }
+                }
+
+                bubble.classList.add('show');
+                
+                if (step.demo) {
+                    demoBadge.style.display = 'inline-block';
+                    await typeEffect(step.demo.id, step.demo.val);
+                } else {
+                    demoBadge.style.display = 'none';
+                }
+                
+                // Voice Teacher Integration
+                const pref = localStorage.getItem('guardian_voice') || 'English + Kannada (Sequential)';
+                if (pref !== 'Muted') {
+                    // Simple logic to speak teacher text
+                    window.speechSynthesis.cancel();
+                    const enUtterance = new SpeechSynthesisUtterance(step.text);
+                    enUtterance.lang = 'en-US';
+                    window.speechSynthesis.speak(enUtterance);
+                }
+
+                document.getElementById('teacher-next').innerText = currentStep === steps.length - 1 ? "Start Protecting" : "Teach Me More";
+            }, 300);
+        }
+
+        async function typeEffect(id, text) {
+            const el = document.getElementById(id);
+            el.value = "";
+            for (let i = 0; i < text.length; i++) {
+                el.value += text[i];
+                await new Promise(r => setTimeout(r, 30));
+            }
+            // Trigger a fake scan look
+            const resultId = id.split('-')[0] + '-result';
+            const resEl = document.getElementById(resultId);
+            if(resEl) resEl.innerHTML = `<p style="font-size:0.75rem; color:var(--primary); font-weight:700;">Teacher Analyzing Example...</p>`;
+        }
+
+        function nextTourStep() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                updateTeacher();
+            } else {
+                skipTour();
+            }
+        }
+
+        function skipTour() {
+            document.getElementById('teacher-container').style.display = 'none';
+            document.getElementById('spotlight-teacher').style.display = 'none';
+            document.querySelectorAll('.spotlight-active').forEach(el => el.classList.remove('spotlight-active'));
+            localStorage.setItem('message_guardian_tour_seen', 'true');
+        }
+
+        window.addEventListener('load', () => {
+            const boot = document.getElementById('nexus-boot');
+            const status = document.getElementById('boot-status');
+            const chatTrigger = document.querySelector('button[onclick="toggleChat()"]');
+            if (chatTrigger) chatTrigger.id = "chatbot-trigger";
+            
+            setTimeout(() => { status.innerText = "Cleaning the workspace..."; }, 500);
+            setTimeout(() => { status.innerText = "Activating your scanner..."; }, 1200);
+            
+            setTimeout(() => {
+                boot.style.opacity = '0';
+                boot.style.transform = 'scale(1.1)';
+                boot.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+                setTimeout(() => { 
+                    boot.style.display = 'none';
+                    if (!localStorage.getItem('message_guardian_tour_seen')) {
+                        startTourManual();
+                    }
+                }, 800);
+            }, 2200);
+        });
+
+        // --- CORE SCANNING ENGINE ---
+        async function performScan(type) {
+            const formData = new FormData();
+            formData.append('type', type);
+            const inputId = type + '-content';
+            const resultId = type + '-result';
+            const resultDiv = document.getElementById(resultId);
+
+            if (type === 'email' || type === 'sms') {
+                const content = document.getElementById(inputId).value;
+                if (!content) return;
+                formData.append('message', content);
+            } else if (type === 'url') {
+                const url = document.getElementById('link-url').value;
+                if (!url) return;
+                formData.append('url', url);
+            } else if (type === 'qr_code' || type === 'apk') {
+                const fileInput = document.getElementById(type === 'qr_code' ? 'qr-file' : 'apk-file');
+                if (!fileInput.files[0]) return;
+                formData.append('file', fileInput.files[0]);
+            }
+
+            resultDiv.innerHTML = `<p style="font-size:0.8rem; color:var(--primary);">Analyzing...</p>`;
+            
+            try {
+                const response = await fetch('/api/scan', { method: 'POST', body: formData });
+                const data = await response.json();
+                
+                const isSpam = data.prediction === 'Spam' || data.prediction === 'Fake' || data.prediction === 'Invalid';
+                const color = isSpam ? 'var(--danger)' : 'var(--success)';
+                
+                resultDiv.innerHTML = `
+                    <div style="padding: 16px; border-radius: 12px; background: ${isSpam ? '#fff5f5' : '#f5fff5'}; border: 1px solid ${color};">
+                        <h4 style="color: ${color}; margin-bottom: 8px; display:flex; align-items:center; gap:8px;">
+                            <i data-lucide="${isSpam ? 'shield-alert' : 'shield-check'}" style="width:16px;"></i> ${data.prediction} ${data.prediction !== 'Invalid' ? '('+data.score+'%)' : ''}
+                        </h4>
+                        <p style="font-size: 0.85rem; color: var(--on-surface);">${data.explanation}</p>
+                        <p style="font-size: 0.85rem; color: var(--on-surface); margin-top: 8px; font-weight: 700;">ಕನ್ನಡ:</p>
+                        <p style="font-size: 0.85rem; color: var(--on-surface); opacity: 0.8;">${data.explanation_kn}</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                autonomousSpeak(isSpam, data.explanation, data.explanation_kn);
+
+                // TRUECALLER-LIKE ALERT
+                if (isSpam && Notification.permission === "granted") {
+                    new Notification("🛡️ SPAM DETECTED", {
+                        body: data.explanation,
+                        icon: "/static/icon-192x192.png",
+                        tag: "spam-alert"
+                    });
+                } else if (!isSpam && Notification.permission === "granted") {
+                    new Notification("✅ SECURE MESSAGE", {
+                        body: "This message is verified as safe.",
+                        icon: "/static/icon-192x192.png",
+                        tag: "ham-alert"
+                    });
+                }
+                
+                // Frequency Counter for App Feedback
+                let scanCount = parseInt(localStorage.getItem('app_scan_count') || '0');
+                scanCount++;
+                localStorage.setItem('app_scan_count', scanCount);
+                if (scanCount % 5 === 0) {
+                    showAppFeedback();
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<p style="color:var(--danger);">Network failure</p>`;
+            }
+        }
+
+        // --- BILINGUAL VOICE ---
+        let utteranceQueue = [];
+        let isSpeaking = false;
+        function autonomousSpeak(isSpam, en, kn) {
+            utteranceQueue = [];
+            window.speechSynthesis.cancel();
+            const pref = localStorage.getItem('guardian_voice') || 'English + Kannada (Sequential)';
+            if (pref.includes('English')) queueSpeech(en, 'en-US');
+            if (pref.includes('Kannada')) queueSpeech(kn, 'kn-IN');
+            setTimeout(processQueue, 100);
+        }
+        function queueSpeech(text, lang) {
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = lang;
+            u.onend = () => { isSpeaking = false; processQueue(); };
+            utteranceQueue.push(u);
+        }
+        function processQueue() {
+            if (isSpeaking || !utteranceQueue.length) return;
+            isSpeaking = true;
+            window.speechSynthesis.speak(utteranceQueue.shift());
+        }
+
+        const translations = {
+            en: {
+                welcome_msg: "Welcome, {{ user['name'] }}",
+                email_protection: "Email Analysis",
+                analyze_email: "Run Security Scan",
+                sms_verification: "SMS & SMSP Verification",
+                verify_code: "Verify Content",
+                link_analysis: "URL & Link Safety",
+                check_link: "Inspect Link",
+                qr_protection: "QR Code Scanner",
+                verify_qr: "Scan QR",
+                analyzing: "Analyzing...",
+                spam_detected: "THREAT DETECTED",
+                ham_detected: "SECURE CONTENT",
+                apk_security: "App Binary Scan",
+                verify_apk: "Inspect Binary",
+                voice_shield: "Speech Analysis",
+                start_speaking: "Initialize Mic",
+                listening: "Listening...",
+                transcribing: "Processing...",
+                spam_advice: "Warning! This is a threat. Delete this message immediately.",
+                ham_advice: "This content is verified as safe. You can proceed without worry."
+            },
+            kn: {
+                welcome_msg: "ಸ್ವಾಗತ, {{ user['name'] }}",
+                email_protection: "ಇಮೇಲ್ ವಿಶ್ಲೇಷಣೆ",
+                analyze_email: "ಭದ್ರತಾ ತಪಾಸಣೆ ನಡೆಸಿ",
+                sms_verification: "SMS ಪರಿಶೀಲನೆ",
+                verify_code: "ಪರಿಶೀಲಿಸಿ",
+                link_analysis: "ಲಿಂಕ್ ಸುರಕ್ಷತೆ",
+                check_link: "ಲಿಂಕ್ ಪರೀಕ್ಷಿಸಿ",
+                qr_protection: "QR ಕೋಡ್ ಸ್ಕ್ಯಾನರ್",
+                verify_qr: "QR ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
+                analyzing: "ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...",
+                spam_detected: "ಅಪಾಯ ಪತ್ತೆಯಾಗಿದೆ",
+                ham_detected: "ಸುರಕ್ಷಿತವಾಗಿದೆ",
+                apk_security: "APK ವಿಶ್ಲೇಷಣೆ",
+                verify_apk: "APK ಸ್ಕ್ಯಾನ್ ಮಾಡಿ",
+                voice_shield: "ಧ್ವನಿ ವಿಶ್ಲೇಷಣೆ",
+                start_speaking: "ಮೈಕ್ ಬಳಸಿ",
+                listening: "ಕೇಳಿಸಿಕೊಳ್ಳುತ್ತಿದ್ದೇನೆ...",
+                transcribing: "ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...",
+                spam_advice: "ಎಚ್ಚರಿಕೆ! ಇದು ಅಪಾಯಕಾರಿ. ದಯವಿಟ್ಟು ಇದನ್ನು ತಕ್ಷಣ ಅಳಿಸಿ ಹಾಕಿ.",
+                ham_advice: "ಇದು ಸುರಕ್ಷಿತವಾಗಿದೆ. ನೀವು ಮುಂದುವರಿಯಬಹುದು."
+            }
+        };
+
+        let currentLang = 'en';
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.querySelectorAll('[data-t]').forEach(el => {
+                const key = el.getAttribute('data-t');
+                if (translations[lang][key]) el.innerHTML = translations[lang][key];
+            });
+            document.getElementById('btn-en').style.background = lang === 'en' ? 'var(--primary)' : '#e0e0e0';
+            document.getElementById('btn-en').style.color = lang === 'en' ? 'white' : '#666';
+            document.getElementById('btn-kn').style.background = lang === 'kn' ? 'var(--primary)' : '#e0e0e0';
+            document.getElementById('btn-kn').style.color = lang === 'kn' ? 'white' : '#666';
+        }
+
+        function updateFileName(inpId, outId) {
+            const file = document.getElementById(inpId).files[0];
+            document.getElementById(outId).textContent = file ? file.name : "Upload File";
+        }
+        function toggleChat() {
+            const chat = document.getElementById('chatbot-container');
+            chat.style.display = chat.style.display === 'none' ? 'flex' : 'none';
+        }
+        async function handleChat() {
+            const inp = document.getElementById('chatInput');
+            const cont = document.getElementById('chatContent');
+            if (!inp.value.trim()) return;
+            cont.innerHTML += `<div class="chat-bubble-user">${inp.value}</div>`;
+            const txt = inp.value; inp.value = '';
+            cont.scrollTop = cont.scrollHeight;
+            try {
+                const res = await fetch('/api/chat', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ message: txt }) });
+                const data = await res.json();
+                cont.innerHTML += `<div class="chat-bubble-ai">${data.response}</div>`;
+                cont.scrollTop = cont.scrollHeight;
+            } catch(e) {}
+        }
+
+        // --- NUCLEAR ALERT ---
+        async function pollNuclear() {
+            try {
+                const res = await fetch('/api/alerts');
+                const data = await res.json();
+                if (data.active) {
+                    document.getElementById('nuclear-title').innerText = data.title;
+                    document.getElementById('nuclear-message').innerText = data.message;
+                    document.getElementById('global-nuclear-alert').style.display = 'block';
+                } else {
+                    document.getElementById('global-nuclear-alert').style.display = 'none';
+                }
+            } catch(e) {}
+        }
+        setInterval(pollNuclear, 10000);
+        pollNuclear();
+
+        function startVoiceScan() {
+            if (!('webkitSpeechRecognition' in window)) return alert("Voice not supported.");
+            const recognition = new webkitSpeechRecognition();
+            recognition.lang = currentLang === 'kn' ? 'kn-IN' : 'en-US';
+            recognition.onstart = () => { document.getElementById('voice-transcription').innerText = "Listening..."; };
+            recognition.onresult = (e) => { 
+                const t = e.results[0][0].transcript;
+                document.getElementById('voice-transcription').innerText = t;
+                if(e.results[0].isFinal) performScan('voice'); 
+            };
+            recognition.start();
+        }
+
+        async function submitFeedback(scanId, rating, el) {
+            // Deprecated per-scan feedback
+        }
+
+        function showAppFeedback() {
+            document.getElementById('app-feedback-card').style.display = 'flex';
+            lucide.createIcons();
+        }
+
+        function closeFeedback() {
+            document.getElementById('app-feedback-card').style.display = 'none';
+        }
+
+        async function submitAppRating(rating) {
+            const stars = document.querySelectorAll('.app-star');
+            stars.forEach((s, i) => {
+                s.style.fill = i < rating ? 'white' : 'none';
+                s.style.color = 'white';
+            });
+            
+            try {
+                const response = await fetch('/api/submit_feedback', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ scan_id: 'global_app', rating: rating })
+                });
+                if (response.ok) {
+                    document.getElementById('feedback-thanks').style.display = 'block';
+                    setTimeout(() => closeFeedback(), 2000);
+                }
+            } catch (err) {}
+        }
+
+        // --- LIVE INTERCEPTOR SIMULATOR ---
+        const threatPool = [
+            { type: "SMS", msg: "Bank: Your account is locked. Click http://bank-secure-v3.com", result: "BLOCKED" },
+            { type: "EMAIL", msg: "Invoice #9921 attached. Please pay immediately.", result: "CLEAN" },
+            { type: "LINK", msg: "http://win-iphone-15.net/prize", result: "BLOCKED" },
+            { type: "SMS", msg: "Mom: I'm home safe!", result: "CLEAN" },
+            { type: "WHATSAPP", msg: "Click to verify your new business account", result: "BLOCKED" }
+        ];
+
+        function startLiveInterceptor() {
+            const lastText = document.getElementById('last-intercept-text');
+            setInterval(() => {
+                const threat = threatPool[Math.floor(Math.random() * threatPool.length)];
+                lastText.innerText = `${threat.type}: ${threat.result}`;
+                lastText.style.color = threat.result === 'BLOCKED' ? 'var(--danger)' : 'var(--success)';
+
+                if (threat.result === 'BLOCKED' && Notification.permission === "granted") {
+                    new Notification("🛡️ Guardian Intercepted Threat", {
+                        body: `A suspicious ${threat.type} was blocked.`,
+                        icon: "/static/icon-192x192.png"
+                    });
+                }
+            }, 8000 + Math.random() * 5000);
+        }
+
+        function requestNotificationPermission() {
+            Notification.requestPermission().then(permission => {
+                const btn = document.getElementById('notif-toggle-btn');
+                if (permission === "granted") {
+                    new Notification("Security Alerts Active", { body: "You will now receive Truecaller-style alerts for threats." });
+                    btn.innerHTML = `<i data-lucide="check" style="width: 14px;"></i> Alerts Active`;
+                    btn.style.background = 'var(--success)';
+                    btn.style.color = 'white';
+                    btn.style.borderColor = 'transparent';
+                    lucide.createIcons();
+                }
+            });
+        }
+
+        window.addEventListener('load', () => {
+            // ... existing load logic
+            startLiveInterceptor();
+        });
+    </script>
+<script src="{{ url_for('static', filename='pwa.js') }}"></script></body>
+</html>

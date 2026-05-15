@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; }
+        .chart-container { height: 350px; position: relative; margin-top: 24px; background: var(--surface-container-low); border-radius: 20px; padding: 24px; }
+        
+        @media (max-width: 900px) {
+            .bento-card[style*="grid-column: span 2"] { grid-column: auto !important; }
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-wrapper">
+            <div class="nav-container">
+                <a href="/dashboard" class="nav-link"><i data-lucide="layout-grid"></i> Hub</a>
+                <a href="/classification" class="nav-link"><i data-lucide="layers"></i> Classification</a>
+                <a href="/analytics" class="nav-link active"><i data-lucide="bar-chart-2"></i> Stats</a>
+                <a href="/family" class="nav-link"><i data-lucide="users"></i> Family</a>
+            </div>
+            <div class="nav-right">
+                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
+                    <i data-lucide="download" style="width: 14px;"></i> Install App
+                </button>
+                <button class="nav-icon-btn">
+                    <i data-lucide="bell"></i>
+                    <span class="notification-badge"></span>
+                </button>
+                <a href="/profile" class="nav-icon-btn">
+                    <i data-lucide="settings"></i>
+                </a>
+                <a href="/profile" class="nav-icon-btn" style="background: var(--surface-container-low); color: var(--primary);">
+                    <i data-lucide="user"></i>
+                </a>
+                <a href="/logout" class="nav-icon-btn text-danger" title="Logout">
+                    <i data-lucide="log-out"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content animate-fade-in">
+        <header class="editorial-header">
+            <span class="editorial-cap">Intelligence Engine</span>
+            <h1 style="font-size: 3rem; margin: 0;">Security Analytics</h1>
+            <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">Visualizing threat vectors and system performance across all channels.</p>
+        </header>
+
+        <div class="layout-section">
+            <div class="stats-grid">
+            <div class="bento-card">
+                <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.95rem;">
+                    <i data-lucide="pie-chart" style="color: var(--primary);"></i> Threat Distribution
+                </div>
+                <div class="chart-container">
+                    <canvas id="riskChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bento-card">
+                <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.95rem;">
+                    <i data-lucide="activity" style="color: var(--success);"></i> Activity Timeline
+                </div>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bento-card" style="grid-column: span 2;">
+                <div style="display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.95rem;">
+                    <i data-lucide="layers" style="color: var(--warning);"></i> Module Usage
+                </div>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        if (localStorage.getItem('guardian_theme') === 'carbon-dark') {
+            document.body.classList.add('carbon-dark');
+        }
+
+        const predictions = JSON.parse('{{ predictions | safe }}');
+        const types = JSON.parse('{{ types | safe }}');
+        const activity = JSON.parse('{{ activity | safe }}');
+
+        Chart.defaults.font.family = "'Inter', sans-serif";
+        Chart.defaults.color = '#424656';
+
+        // Risk Distribution Chart
+        new Chart(document.getElementById('riskChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Legitimate', 'Threats'],
+                datasets: [{
+                    data: [predictions['Ham'] || 0, (predictions['Spam'] || 0) + (predictions['Fake'] || 0)],
+                    backgroundColor: ['#34C759', '#ba1a1a'],
+                    borderWidth: 0,
+                    borderRadius: 8,
+                    spacing: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom' } },
+                cutout: '75%'
+            }
+        });
+
+        // Scan Trends Chart
+        new Chart(document.getElementById('trendChart'), {
+            type: 'line',
+            data: {
+                labels: activity.map(d => d.date),
+                datasets: [{
+                    label: 'Daily Scans',
+                    data: activity.map(d => d.count),
+                    borderColor: '#004bca',
+                    backgroundColor: 'rgba(0, 75, 202, 0.05)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#E5E5EA' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+
+        // Category Audit Chart
+        new Chart(document.getElementById('typeChart'), {
+            type: 'bar',
+            data: {
+                labels: Object.keys(types),
+                datasets: [{
+                    label: 'Scans by Category',
+                    data: Object.values(types),
+                    backgroundColor: '#004bca',
+                    borderRadius: 12
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#E5E5EA' } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    </script>
+<script src="{{ url_for('static', filename='pwa.js') }}"></script></body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .history-list { display: flex; flex-direction: column; gap: 20px; }
+        .history-item { 
+            display: flex; align-items: center; gap: 24px; padding: 24px;
+            background: var(--surface-container-lowest); border-radius: var(--radius-xl);
+            border: 1px solid var(--outline-variant); transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .history-item:hover { transform: translateX(8px); border-color: var(--primary); box-shadow: var(--shadow-ambient); }
+        .status-badge { 
+            padding: 8px 16px; border-radius: 50px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .status-spam { color: var(--danger); background: #ffdad6; }
+        .status-ham { color: var(--success); background: #e5ffe5; }
+    </style>
+        
+        @media (max-width: 600px) {
+            .history-item { flex-direction: column; align-items: flex-start; gap: 12px; }
+            .history-item .actions { width: 100%; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--card-border); }
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-wrapper">
+            <div class="nav-container">
+                <a href="/dashboard" class="nav-link"><i data-lucide="layout-grid"></i> Hub</a>
+                <a href="/classification" class="nav-link"><i data-lucide="layers"></i> Classification</a>
+                <a href="/analytics" class="nav-link"><i data-lucide="bar-chart-2"></i> Stats</a>
+                <a href="/history" class="nav-link active"><i data-lucide="history"></i> History</a>
+                <a href="/family" class="nav-link"><i data-lucide="users"></i> Family</a>
+            </div>
+            <div class="nav-right">
+                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
+                    <i data-lucide="download" style="width: 14px;"></i> Install App
+                </button>
+                <button class="nav-icon-btn">
+                    <i data-lucide="bell"></i>
+                    <span class="notification-badge"></span>
+                </button>
+                <a href="/profile" class="nav-icon-btn">
+                    <i data-lucide="settings"></i>
+                </a>
+                <a href="/profile" class="nav-icon-btn" style="background: var(--surface-container-low); color: var(--primary);">
+                    <i data-lucide="user"></i>
+                </a>
+                <a href="/logout" class="nav-icon-btn text-danger" title="Logout">
+                    <i data-lucide="log-out"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content animate-fade-in">
+        <header class="editorial-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+                <span class="editorial-cap">Audit Trail</span>
+                <h1 style="font-size: 3rem; margin: 0;">Activity History</h1>
+                <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">Historical record of security analysis and system curations.</p>
+            </div>
+            <button id="bulk-delete-btn" onclick="deleteSelected()" class="btn" style="background: var(--danger); color: white; display: none; padding: 12px 24px;">
+                <i data-lucide="trash-2"></i> Purge Selected
+            </button>
+        </header>
+
+        <div class="layout-section">
+
+        {% if scans %}
+        <div class="history-list">
+            {% for scan in scans %}
+            {% set is_spam = scan.prediction in ['Spam', 'Fake'] %}
+            <div class="history-item" id="scan-row-{{ scan.id }}">
+                <div class="status-badge {{ 'status-spam' if is_spam else 'status-ham' }}">
+                    {{ scan.prediction }}
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                    <p style="font-size: 0.75rem; font-weight: 800; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px;">{{ scan.scan_type }} • {{ scan.timestamp }}</p>
+                    <p style="font-size: 1.1rem; font-weight: 700; color: var(--on-surface); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ scan.content }}</p>
+                </div>
+                <div class="actions" style="display: flex; gap: 12px; align-items: center;">
+                    <input type="checkbox" class="scan-checkbox" value="{{ scan.id }}" onclick="updateBulkButton()" style="width: 20px; height: 20px;">
+                    <button onclick="deleteRecord('{{ scan.id }}')" class="btn" style="background: var(--surface-container-low); padding: 12px; color: var(--danger);">
+                        <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div style="text-align: center; padding: 80px 20px; background: var(--surface-container-low); border-radius: 24px; border: 1px dashed var(--outline-variant);">
+            <i data-lucide="history" style="width: 48px; height: 48px; color: var(--text-muted); opacity: 0.3; margin-bottom: 16px;"></i>
+            <h3 style="color: var(--on-surface-variant);">No history found</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Your security scan logs will appear here once you start analyzing content.</p>
+            <a href="/dashboard" class="btn btn-primary" style="display: inline-block; margin-top: 24px;">Start Your First Scan</a>
+        </div>
+        {% endif %}
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        function updateBulkButton() {
+            const count = document.querySelectorAll('.scan-checkbox:checked').length;
+            document.getElementById('bulk-delete-btn').style.display = count > 0 ? 'inline-flex' : 'none';
+        }
+
+        async function deleteRecord(id) {
+            if (!confirm('Delete this record?')) return;
+            const res = await fetch(`/api/delete_scan/${id}`, { method: 'POST' });
+            if (await res.json()) document.getElementById(`scan-row-${id}`).remove();
+        }
+
+        function deleteSelected() {
+            const ids = Array.from(document.querySelectorAll('.scan-checkbox:checked')).map(cb => cb.value);
+            if (confirm(`Delete ${ids.length} records?`)) {
+                ids.forEach(async id => {
+                    await fetch(`/api/delete_scan/${id}`, { method: 'POST' });
+                    document.getElementById(`scan-row-${id}`).remove();
+                });
+                updateBulkButton();
+            }
+        }
+    </script>
+<script src="{{ url_for('static', filename='pwa.js') }}"></script></body>
+</html>

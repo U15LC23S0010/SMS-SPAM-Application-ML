@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify OTP | SMS AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .otp-container {
+            width: 100%;
+            max-width: 440px;
+            padding: 48px;
+            border-radius: 24px;
+            text-align: center;
+        }
+
+        .otp-input-group {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 32px 0;
+        }
+
+        .otp-digit {
+            width: 56px;
+            height: 64px;
+            font-size: 1.5rem;
+            text-align: center;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--glass-border);
+            color: white;
+            font-weight: 800;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .otp-digit:focus {
+            outline: none;
+            border-color: var(--primary);
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        @keyframes verifying {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .pulse-verify {
+            animation: verifying 2s infinite ease-in-out;
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+
+<body>
+    <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} glass">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="otp-container glass animate-fade-in">
+        <div
+            style="background: rgba(16, 185, 129, 0.1); width: 64px; height: 64px; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; border: 1px solid rgba(16, 185, 129, 0.2);">
+            <i data-lucide="mail-check" style="color: var(--success); width: 32px; height: 32px;"></i>
+        </div>
+
+        <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px;">Verify Identity</h1>
+        <p style="color: var(--text-muted);">We've sent a 6-digit code to <br><b style="color: var(--text-main);">{{
+                session['email'] }}</b></p>
+
+        <form method="POST" id="otpForm">
+            <input type="hidden" name="otp" id="fullOtp">
+            <div class="otp-input-group">
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+                <input type="text" class="otp-digit" maxlength="1" pattern="[0-9]" inputmode="numeric" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary"
+                style="width: 100%; padding: 16px; border-radius: 12px; font-size: 1.1rem; font-weight: 700;">
+                Verify Securely <i data-lucide="check-circle-2"></i>
+            </button>
+        </form>
+
+        <p style="margin-top: 32px; color: var(--text-muted); font-size: 0.9rem;">
+            Didn't receive code? <a href="javascript:void(0)" onclick="resendOtp()" id="resendBtn"
+                style="color: var(--primary); text-decoration: none; font-weight: 600;">Resend OTP</a>
+        </p>
+    </div>
+
+    <script>
+        lucide.createIcons();
+        const digits = document.querySelectorAll('.otp-digit');
+        const form = document.querySelector('#otpForm');
+        const fullOtp = document.querySelector('#fullOtp');
+
+        digits.forEach((digit, idx) => {
+            digit.addEventListener('input', (e) => {
+                if (e.target.value && idx < digits.length - 1) {
+                    digits[idx + 1].focus();
+                }
+            });
+
+            digit.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+                    digits[idx - 1].focus();
+                }
+            });
+        });
+
+        form.addEventListener('submit', (e) => {
+            let combined = '';
+            digits.forEach(digit => combined += digit.value);
+            fullOtp.value = combined;
+
+            // Pulse animation on submit
+            document.querySelector('.otp-container').classList.add('pulse-verify');
+        });
+
+        async function resendOtp() {
+            const btn = document.getElementById('resendBtn');
+            const originalText = btn.innerHTML;
+            
+            btn.style.pointerEvents = 'none';
+            btn.style.opacity = '0.5';
+            btn.innerHTML = 'Sending...';
+
+            try {
+                const response = await fetch('/api/resend-otp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    alert(data.message);
+                } else {
+                    alert("Error: " + data.message);
+                }
+            } catch (err) {
+                alert("Connection error. Please try again.");
+            } finally {
+                btn.style.pointerEvents = 'auto';
+                btn.style.opacity = '1';
+                btn.innerHTML = originalText;
+            }
+        }
+    </script>
+</body>
+
+</html>

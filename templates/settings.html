@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .settings-container { max-width: 900px; margin: 0 auto; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        .form-group { margin-bottom: 24px; }
+        .label { display: block; font-weight: 700; font-size: 0.85rem; margin-bottom: 10px; color: var(--on-surface-variant); text-transform: uppercase; letter-spacing: 0.05em; }
+        @media (max-width: 600px) {
+            .form-grid { grid-template-columns: 1fr; gap: 16px; }
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="top-nav">
+        <div class="nav-wrapper">
+            <div class="nav-container">
+                <a href="/dashboard" class="nav-link"><i data-lucide="layout-grid"></i> Hub</a>
+                <a href="/classification" class="nav-link"><i data-lucide="layers"></i> Classification</a>
+                <a href="/analytics" class="nav-link"><i data-lucide="bar-chart-2"></i> Stats</a>
+                <a href="/family" class="nav-link"><i data-lucide="users"></i> Family</a>
+            </div>
+            <div class="nav-right">
+                <button id="pwa-install-btn" class="btn btn-primary pulsing-install" style="display: inline-flex; align-items: center; gap: 8px; font-size: 0.8rem; padding: 6px 12px; margin-right: 12px; border-radius: 12px; background: var(--primary); color: white; border: none; cursor: pointer; font-weight: 700;">
+                    <i data-lucide="download" style="width: 14px;"></i> Install App
+                </button>
+                <button class="nav-icon-btn" onclick="toggleNotifications(event)">
+                    <i data-lucide="bell"></i>
+                    <span id="notif-badge" class="notification-badge"></span>
+                </button>
+                <div id="notif-dropdown" class="notif-dropdown">
+                    <div class="notif-header">
+                        <h4 style="margin:0;">Security Alerts</h4>
+                        <span onclick="clearNotifications()" style="font-size:0.75rem; color:var(--primary); cursor:pointer; font-weight:700;">Clear All</span>
+                    </div>
+                    <div class="notif-body" id="notif-items-container">
+                        <!-- Dynamic Notifications -->
+                    </div>
+                    <div style="padding:16px; border-top:1px solid var(--outline-variant); text-align:center;">
+                        <a href="/history" style="font-size:0.85rem; color:var(--primary); text-decoration:none; font-weight:700;">Review Full Audit Log</a>
+                    </div>
+                </div>
+                <a href="/settings" class="nav-icon-btn active" style="background: var(--primary); color: white;">
+                    <i data-lucide="settings"></i>
+                </a>
+                <a href="/profile" class="nav-icon-btn" style="background: var(--surface-container-low); color: var(--primary);">
+                    <i data-lucide="user"></i>
+                </a>
+                <a href="/logout" class="nav-icon-btn text-danger" title="Logout">
+                    <i data-lucide="log-out"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <main class="main-content animate-fade-in">
+        <div class="settings-container">
+            <header class="editorial-header">
+                <span class="editorial-cap">System Configuration</span>
+                <h1 style="font-size: 3rem; margin: 0;">Security Settings</h1>
+                <p style="color: var(--on-surface-variant); font-size: 1.1rem; margin-top: 8px;">Calibrate your AI heuristics and system-wide preferences.</p>
+            </header>
+
+            <!-- SECURITY PROTOCOLS -->
+            <div class="bento-card" style="margin-top: 32px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                    <i data-lucide="shield-check" style="color: var(--primary);"></i>
+                    <h3 style="margin: 0;">Security Protocols</h3>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="font-weight: 700; margin: 0;">Two-Factor Authentication</p>
+                            <p style="font-size: 0.85rem; color: var(--on-surface-variant); margin: 4px 0;">Add an extra layer of security to your verification node.</p>
+                        </div>
+                        <input type="checkbox" {% if user.two_factor %}checked{% endif %} onchange="handleSettingChange('2FA', this.checked)" style="width: 24px; height: 24px; cursor: pointer;">
+                    </div>
+                    <hr style="border: 0; border-top: 1px solid var(--outline-variant);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <p style="font-weight: 700; margin: 0;">AI Threat Sensitivity</p>
+                            <p style="font-size: 0.85rem; color: var(--on-surface-variant); margin: 4px 0;">Adjust the heuristic scoring model intensity.</p>
+                        </div>
+                        <select class="form-input" onchange="handleSettingChange('Sensitivity', this.value)" style="width: auto; padding: 8px 16px;">
+                            <option {% if user.sensitivity == 'Balanced' %}selected{% endif %}>Balanced</option>
+                            <option {% if user.sensitivity == 'Highly Sensitive' %}selected{% endif %}>Highly Sensitive</option>
+                            <option {% if user.sensitivity == 'Legacy Mode' %}selected{% endif %}>Legacy Mode</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PREFERENCES -->
+            <div class="bento-card" style="margin-top: 32px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                    <i data-lucide="sliders" style="color: var(--primary);"></i>
+                    <h3 style="margin: 0;">System Preferences</h3>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="label">Primary Voice Interface</label>
+                        <select class="form-input" onchange="handleSettingChange('Voice Interface', this.value)">
+                            <option {% if user.voice_interface == 'English + Kannada (Sequential)' %}selected{% endif %}>English + Kannada (Sequential)</option>
+                            <option {% if user.voice_interface == 'English Only' %}selected{% endif %}>English Only</option>
+                            <option {% if user.voice_interface == 'Kannada Only' %}selected{% endif %}>Kannada Only</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">System Appearance</label>
+                        <select class="form-input" onchange="handleSettingChange('Appearance', this.value)">
+                            <option value="default" {% if user.theme == 'default' %}selected{% endif %}>The Sentient Shield (Default)</option>
+                            <option value="high-contrast" {% if user.theme == 'high-contrast' %}selected{% endif %}>High Contrast Aura</option>
+                            <option value="carbon-dark" {% if user.theme == 'carbon-dark' %}selected{% endif %}>Carbon Dark</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DATA INTEGRITY -->
+            <div class="bento-card" style="margin-top: 32px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px;">
+                    <i data-lucide="database" style="color: var(--primary);"></i>
+                    <h3 style="margin: 0;">Data Integrity</h3>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <p style="font-weight: 700; margin: 0;">Auto-Clear Scan History</p>
+                        <p style="font-size: 0.85rem; color: var(--on-surface-variant); margin: 4px 0;">Flush all local classifications after 30 days.</p>
+                    </div>
+                    <input type="checkbox" {% if user.auto_clear_history %}checked{% endif %} onchange="handleSettingChange('Auto-Clear', this.checked)" style="width: 24px; height: 24px; cursor: pointer;">
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        /* --- NOTIFICATION CONTROLLER --- */
+        const mockNotifications = [
+            { type: 'danger', title: 'System Warning', text: 'Spam QR payload detected in last scan.', time: '2m ago', icon: 'shield-alert' },
+            { type: 'info', title: 'Security Tip', text: 'Enable 2FA in settings for enhanced protection.', time: '1h ago', icon: 'info' }
+        ];
+
+        function toggleNotifications(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('notif-dropdown');
+            const isVisible = dropdown.style.display === 'flex';
+            dropdown.style.display = isVisible ? 'none' : 'flex';
+            if (!isVisible) renderNotifications();
+        }
+
+        function renderNotifications() {
+            const container = document.getElementById('notif-items-container');
+            if (mockNotifications.length === 0) {
+                container.innerHTML = `<div style="padding:40px; text-align:center; color:var(--on-surface-variant);"><i data-lucide="bell-off" style="width:32px; height:32px; margin-bottom:12px; opacity:0.5;"></i><p style="font-size:0.9rem;">No new alerts.</p></div>`;
+                document.getElementById('notif-badge').style.display = 'none';
+            } else {
+                container.innerHTML = mockNotifications.map(n => `
+                    <div class="notif-item">
+                        <div class="notif-icon-circle" style="color: var(--${n.type})"><i data-lucide="${n.icon}" style="width:18px; height:18px;"></i></div>
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start;"><p style="font-weight:700; margin:0; font-size:0.95rem;">${n.title}</p><span style="font-size:0.75rem; color:var(--on-surface-variant);">${n.time}</span></div>
+                            <p style="margin:4px 0 0; font-size:0.85rem; color:var(--on-surface-variant); line-height:1.4;">${n.text}</p>
+                        </div>
+                    </div>`).join('');
+                document.getElementById('notif-badge').style.display = 'block';
+            }
+            lucide.createIcons();
+        }
+
+        function clearNotifications() { mockNotifications.length = 0; renderNotifications(); }
+        window.addEventListener('click', () => { document.getElementById('notif-dropdown').style.display = 'none'; });
+        if (mockNotifications.length > 0) { document.getElementById('notif-badge').style.display = 'block'; }
+
+        /* --- SETTINGS ACTIONS --- */
+        async function handleSettingChange(label, value) {
+            let status = (typeof value === 'boolean') ? (value ? 'Enabled' : 'Disabled') : value;
+            
+            try {
+                const response = await fetch('/api/update_settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ key: label, value: value })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showToast(`${label} updated to: ${status}`, 'success');
+                    if (label === 'Appearance') applyTheme(value);
+                    if (label === 'Voice Interface') localStorage.setItem('guardian_voice', value);
+                }
+            } catch (err) {
+                showToast("System error. Could not sync preference.", "danger");
+            }
+        }
+
+        function applyTheme(themeId) {
+            document.body.classList.remove('carbon-dark', 'high-contrast');
+            
+            if (themeId && themeId !== 'default') {
+                document.body.classList.add(themeId);
+                localStorage.setItem('guardian_theme', themeId);
+            } else {
+                localStorage.setItem('guardian_theme', 'default');
+            }
+            showToast("Appearance protocol updated.", 'info');
+        }
+
+        // Initialize Theme from Storage / Server
+        window.addEventListener('DOMContentLoaded', () => {
+            const serverTheme = "{{ user.theme }}";
+            if (serverTheme) {
+                localStorage.setItem('guardian_theme', serverTheme);
+                applyTheme(serverTheme);
+                const select = document.querySelector('select[onchange*="Appearance"]');
+                if (select) select.value = serverTheme;
+            }
+            
+            const savedVoice = localStorage.getItem('guardian_voice');
+            if (savedVoice) {
+                const select = document.querySelector('select[onchange*="Voice Interface"]');
+                if (select) select.value = savedVoice;
+            }
+        });
+
+        function showToast(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            const icon = type === 'success' ? 'check-circle' : 'info';
+            const color = type === 'success' ? 'var(--success)' : 'var(--primary)';
+            toast.innerHTML = `<i data-lucide="${icon}" style="color: ${color}; width:20px; height:20px;"></i><span style="font-size:0.9rem; font-weight:600;">${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
+    </script>
+<script src="{{ url_for('static', filename='pwa.js') }}"></script></body>
+</html>

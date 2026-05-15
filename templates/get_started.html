@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started | Message Guardian</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background: var(--surface);
+            color: var(--on-surface);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 80px 24px;
+            font-family: 'Inter', sans-serif;
+        }
+        h1, h2, h3 { font-family: 'Manrope', sans-serif; font-weight: 800; }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            letter-spacing: -3px;
+            margin-bottom: 20px;
+        }
+
+        .step-card {
+            background: var(--surface-container-lowest);
+            padding: 48px;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--outline-variant);
+            box-shadow: var(--shadow-ambient);
+            margin-bottom: 40px;
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            animation: slideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .icon-box {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: var(--surface-container-low);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .step-content h3 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -0.8px;
+        }
+
+        .step-content p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--on-surface-variant);
+            margin: 0;
+        }
+
+        .step-tag {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: block;
+        }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <span class="step-tag">Official Protocol</span>
+            <h1>Message Safety Guide</h1>
+            <p style="font-size: 1.2rem; color: var(--text-muted); font-weight: 500;">Ensuring your protection in a digital world.</p>
+        </header>
+
+        <div class="step-wrapper">
+            <div class="step-card" style="animation-delay: 0.1s;">
+                <div class="icon-box">
+                    <i data-lucide="shield-check" style="width: 40px; height: 40px;"></i>
+                </div>
+                <div class="step-content">
+                    <span class="step-tag">Step 1</span>
+                    <h3>Identify Potential Risks</h3>
+                    <p>When you receive a suspicious message or link, avoid clicking immediately. Your first step is verification through our professional system.</p>
+                </div>
+            </div>
+
+            <div id="step-2" class="step-card" style="animation-delay: 0.2s;">
+                <div class="icon-box">
+                    <i data-lucide="scan-text" style="width: 40px; height: 40px;"></i>
+                </div>
+                <div class="step-content">
+                    <span class="step-tag">Step 2</span>
+                    <h3>Start a Security Check</h3>
+                    <p>Simply paste the content into your Guardian dashboard. Our system performs an in-depth analysis to secure your verification.</p>
+                </div>
+            </div>
+
+            <div id="step-3" class="step-card" style="animation-delay: 0.3s;">
+                <div class="icon-box">
+                    <i data-lucide="alert-circle" style="width: 40px; height: 40px;"></i>
+                </div>
+                <div class="step-content">
+                    <span class="step-tag">Step 3</span>
+                    <h3>Review Safety Reports</h3>
+                    <p>Check the analysis summary. If a message is flagged as suspicious, follow the recommended actions to keep your account safe.</p>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 80px;">
+            <a href="/dashboard" class="btn btn-primary" style="padding: 24px 64px; font-size: 1.2rem; border-radius: 100px;">
+                Initialize Dashboard <i data-lucide="arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+    <script>lucide.createIcons();</script>
+</body>
+
+</html>

@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardian Intel | Administrative Nexus</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --admin-bg: #000000;
+            --admin-surface: #0a0a0a;
+            --admin-border: rgba(255,255,255,0.15);
+            --admin-text: #ffffff;
+            --admin-text-dim: #999;
+            --admin-accent: #ffffff;
+            --admin-sidebar-w: 280px;
+            --danger: #FF453A;
+            --primary: #007AFF;
+        }
+
+        body {
+            background: var(--admin-bg);
+            color: var(--admin-text);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* --- FORMS & INPUTS --- */
+        .form-input {
+            width: 100%;
+            background: #111 !important;
+            border: 1px solid var(--admin-border) !important;
+            padding: 16px !important;
+            border-radius: 12px !important;
+            color: #fff !important;
+            font-family: 'Inter', sans-serif !important;
+            font-size: 1rem !important;
+            transition: all 0.3s ease !important;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none !important;
+            border-color: #fff !important;
+            background: #151515 !important;
+            box-shadow: 0 0 15px rgba(255,255,255,0.1);
+        }
+
+        .btn {
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: 800;
+        }
+
+        .btn-primary {
+            background: #fff;
+            color: #000;
+            padding: 16px 32px;
+            border-radius: 12px;
+        }
+
+        .btn-primary:hover {
+            transform: scale(0.98);
+            background: #eee;
+        }
+
+        /* --- SIDEBAR --- */
+        .admin-sidebar {
+            width: var(--admin-sidebar-w);
+            background: var(--admin-surface);
+            border-right: 1px solid var(--admin-border);
+            display: flex;
+            flex-direction: column;
+            padding: 32px 0;
+            z-index: 100;
+        }
+
+        .brand-section {
+            padding: 0 32px 48px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-logo {
+            width: 40px;
+            height: 40px;
+            background: #fff;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #000;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+        }
+
+        .nav-group {
+            flex: 1;
+            padding: 0 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            color: #666;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            margin-bottom: 4px;
+            cursor: pointer;
+        }
+
+        .nav-item:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+
+        .nav-item.active {
+            color: #000;
+            background: #fff;
+        }
+
+        .sidebar-footer {
+            padding: 32px 16px 0;
+            border-top: 1px solid var(--admin-border);
+            margin: 0 16px;
+        }
+
+        /* --- MAIN CONTENT --- */
+        .admin-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: #000;
+        }
+
+        .admin-top-bar {
+            height: 80px;
+            border-bottom: 1px solid var(--admin-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 40px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+        }
+
+        .content-area {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+        }
+
+        /* --- DASH COMPONENTS --- */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .glass-stat {
+            background: #080808;
+            border: 1px solid var(--admin-border);
+            padding: 32px;
+            border-radius: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+
+        .glass-stat:hover {
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .stat-label { color: #555; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+        .stat-value { font-size: 2.2rem; font-weight: 800; font-family: 'Manrope'; color: #fff; }
+
+        .dashboard-section {
+            background: #080808;
+            border: 1px solid var(--admin-border);
+            border-radius: 24px;
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 32px;
+        }
+
+        /* --- TABLES --- */
+        .intel-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .intel-table th {
+            text-align: left;
+            padding: 16px;
+            color: #444;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            font-weight: 800;
+            border-bottom: 2px solid var(--admin-border);
+        }
+
+        .intel-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--admin-border);
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+
+        .intel-table tr:hover td {
+            color: #fff;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .prediction-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 800;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+        .bg-spam { background: rgba(255, 69, 58, 0.15); color: #FF453A; }
+        .bg-ham { background: rgba(255, 255, 255, 0.1); color: #fff; }
+
+        .type-pill {
+            background: rgba(255,255,255,0.05);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono';
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* --- VIEWS --- */
+        .admin-view { display: none; }
+        .admin-view.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #333; }
+    </style>
+    <link rel="manifest" href="/manifest.json">
+</head>
+<body>
+    <aside class="admin-sidebar">
+        <div class="brand-section">
+            <div class="brand-logo">
+                <i data-lucide="shield-check"></i>
+            </div>
+            <div>
+                <div style="font-weight: 800; font-size: 1.1rem; letter-spacing: -0.5px;">GUARDIAN</div>
+                <div style="font-size: 0.65rem; color: #888; font-weight: 800; text-transform: uppercase;">Nexus Admin v2</div>
+            </div>
+        </div>
+
+        <nav class="nav-group">
+            <div class="nav-item active" onclick="switchView('overview', this)">
+                <i data-lucide="layout-dashboard"></i> Overview
+            </div>
+            <div class="nav-item" onclick="switchView('audit', this)">
+                <i data-lucide="users"></i> User Audit
+            </div>
+            <div class="nav-item" onclick="switchView('threat', this)">
+                <i data-lucide="globe"></i> Threat Intelligence
+            </div>
+            <div class="nav-item" onclick="switchView('security', this)">
+                <i data-lucide="bell-ring"></i> Security Control
+            </div>
+            <div class="nav-item" onclick="switchView('geo', this)">
+                <i data-lucide="map"></i> Geo-Telemetry
+            </div>
+            <div class="nav-item" onclick="switchView('system', this)">
+                <i data-lucide="hard-drive"></i> System Health
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/logout" class="nav-item" style="color: #FF453A;">
+                <i data-lucide="log-out"></i> System Exit
+            </a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <header class="admin-top-bar">
+            <div>
+                <span id="view-title" style="font-size: 1.2rem; font-weight: 800; color: white;">Administrative Overview</span>
+            </div>
+            <div style="display: flex; gap: 16px; align-items: center;">
+                <div style="width: 1px; height: 32px; background: var(--admin-border);"></div>
+                <div style="text-align: right;">
+                    <div style="font-weight: 700; font-size: 0.85rem;">System Master</div>
+                    <div style="font-size: 0.75rem; color: #888;">Node: 127.0.0.1</div>
+                </div>
+                <div style="width: 44px; height: 44px; background: #222; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid var(--admin-border);">
+                    <i data-lucide="terminal" style="width: 18px; color: var(--admin-accent);"></i>
+                </div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <!-- VIEW: OVERVIEW -->
+            <div id="view-overview" class="admin-view active">
+                <div class="stat-grid">
+                    <div class="glass-stat">
+                        <div class="stat-label">Total Users</div>
+                        <div class="stat-value">{{ total_users }}</div>
+                    </div>
+                    <div class="glass-stat">
+                        <div class="stat-label">Security Scans</div>
+                        <div class="stat-value">{{ total_system_scans }}</div>
+                    </div>
+                    <div class="glass-stat">
+                        <div class="stat-label">System State</div>
+                        <div class="stat-value" style="color: #32D74B;">STABLE</div>
+                    </div>
+                    <div class="glass-stat">
+                        <div class="stat-label">Threat Velocity</div>
+                        <div class="stat-value">LOW</div>
+                    </div>
+                </div>
+
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h3 style="margin: 0;">Distribution by Vector</h3>
+                    </div>
+                    <div style="display: flex; gap: 40px; align-items: center;">
+                        {% for type, count in threat_breakdown.items() %}
+                        <div>
+                            <div style="font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 800; margin-bottom: 4px;">{{ type }}</div>
+                            <div style="font-size: 1.5rem; font-weight: 800; color: white;">{{ count }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: USER AUDIT -->
+            <div id="view-audit" class="admin-view">
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h3 style="margin: 0;">Identity Integrity Report</h3>
+                    </div>
+                    <table class="intel-table">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>Identifier</th>
+                                <th>Trust Score</th>
+                                <th>Activity</th>
+                                <th>Interceptions</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr id="user-row-{{ user.id }}">
+                                <td style="font-weight: 700;">{{ user.name }}</td>
+                                <td style="font-family: 'JetBrains Mono'; opacity: 0.7;">{{ user.email }}</td>
+                                <td><span style="color: var(--admin-accent); font-weight: 800;">{{ user.loyalty_points }}</span></td>
+                                <td>{{ user.total_scans }}</td>
+                                <td style="color: #FF453A; font-weight: 800;">{{ user.threats_blocked }}</td>
+                                <td>
+                                    <button 
+                                        data-user-id="{{ user.id }}" 
+                                        data-user-name="{{ user.name }}" 
+                                        onclick="confirmDeleteUser(this)" 
+                                        class="btn" 
+                                        style="background: rgba(255, 69, 58, 0.1); color: #FF453A; padding: 8px 12px; border-radius: 8px; font-size: 0.7rem;"
+                                    >
+                                        <i data-lucide="trash-2" style="width: 14px;"></i> DELETE
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: THREAT INTEL -->
+            <div id="view-threat" class="admin-view">
+                <div id="news-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 24px;">
+                    <!-- News cards injected here -->
+                </div>
+            </div>
+
+            <!-- VIEW: SECURITY CONTROL (NUCLEAR ALERT) -->
+            <div id="view-security" class="admin-view">
+                <div style="display: grid; grid-template-columns: 1fr 1.5fr; gap: 32px;">
+                    <div class="dashboard-section">
+                        <h3 style="margin-top: 0; color: #FF453A;">Nuclear Alert System</h3>
+                        <p style="font-size: 0.85rem; color: #888; margin-bottom: 24px;">Broadcast a system-wide high-priority alert to all active users. This will appear as a mandatory banner on their dashboard.</p>
+                        
+                        <div style="margin-bottom: 20px;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #555; text-transform: uppercase; margin-bottom: 8px;">Alert Headline</label>
+                            <input type="text" id="alert-title" class="form-input" style="background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border);" placeholder="e.g. MASSIVE PHISHING WAVE">
+                        </div>
+                        <div style="margin-bottom: 24px;">
+                            <label style="display: block; font-size: 0.75rem; font-weight: 800; color: #555; text-transform: uppercase; margin-bottom: 8px;">Intercept Directive (Message)</label>
+                            <textarea id="alert-message" class="form-input" style="background: rgba(255,255,255,0.03); border: 1px solid var(--admin-border); min-height: 120px;" placeholder="Describe the threat and provide user instructions..."></textarea>
+                        </div>
+                        <button onclick="broadcastAlert()" class="btn btn-primary" style="width: 100%; background: #FF453A;">
+                            INITIATE BROADCAST <i data-lucide="zap"></i>
+                        </button>
+                        <button onclick="removeAlert()" class="btn" style="width: 100%; margin-top: 12px; background: #222; color: #FF453A; border: 1px solid #FF453A;">
+                            TERMINATE ACTIVE ALERT
+                        </button>
+                    </div>
+
+                    <div class="dashboard-section">
+                        <h3 style="margin-top: 0;">Transmission Logs</h3>
+                        <div id="admin-logs-container" style="display: flex; flex-direction: column; gap: 12px; font-family: 'JetBrains Mono'; font-size: 0.8rem;">
+                            <!-- Activity logs here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: GEO-TELEMETRY (HEATMAP) -->
+            <div id="view-geo" class="admin-view">
+                <div class="dashboard-section">
+                    <h3 style="margin-top: 0;">Regional Threat Density (Heatmap)</h3>
+                    <p style="font-size: 0.85rem; color: #888; margin-bottom: 32px;">Statistical breakdown of intercepted threats distributed by geographic subject location.</p>
+                    
+                    <div id="geo-stats-container" style="display: flex; flex-direction: column; gap: 32px;">
+                        <!-- Geo bars here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: SYSTEM HEALTH -->
+            <div id="view-system" class="admin-view">
+                <div class="stat-grid">
+                    <div class="glass-stat">
+                        <div class="stat-label">OS Environment</div>
+                        <div class="stat-value" id="health-os" style="font-size: 1.5rem;">LOADING...</div>
+                    </div>
+                    <div class="glass-stat">
+                        <div class="stat-label">DB File Size</div>
+                        <div class="stat-value" id="health-db-size">0 MB</div>
+                    </div>
+                    <div class="glass-stat">
+                        <div class="stat-label">System Uptime</div>
+                        <div class="stat-value" style="color: #32D74B;">99.9%</div>
+                    </div>
+                    <div class="glass-stat">
+                        <div class="stat-label">Active Nodes</div>
+                        <div class="stat-value" id="health-users">0</div>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px;">
+                    <div class="dashboard-section">
+                        <div class="section-header">
+                            <h3 style="margin: 0;">Live Resource Telemetry</h3>
+                        </div>
+                        <div style="margin-bottom: 32px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem;">
+                                <span>CPU Logical Load</span>
+                                <span id="cpu-val" style="font-weight: 800;">0%</span>
+                            </div>
+                            <div style="height: 8px; background: #222; border-radius: 4px; overflow: hidden;">
+                                <div id="cpu-bar" style="height: 100%; background: var(--admin-accent); width: 0%; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem;">
+                                <span>Memory Allocation</span>
+                                <span id="mem-val" style="font-weight: 800;">0%</span>
+                            </div>
+                            <div style="height: 8px; background: #222; border-radius: 4px; overflow: hidden;">
+                                <div id="mem-bar" style="height: 100%; background: #AF52DE; width: 0%; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-section">
+                        <div class="section-header">
+                            <h3 style="margin: 0;">Integration Status</h3>
+                        </div>
+                        <div id="integration-list" style="display: flex; flex-direction: column; gap: 20px;">
+                            <!-- Dynamic Content -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        function switchView(viewId, el) {
+            // Update Nav
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            el.classList.add('active');
+
+            // Update Views
+            document.querySelectorAll('.admin-view').forEach(view => view.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+
+            // Update Title
+            const titles = {
+                'overview': 'Administrative Overview',
+                'audit': 'Identity Integrity Audit',
+                'threat': 'Global Threat Intelligence',
+                'security': 'Interception Control',
+                'geo': 'Global Geo-Telemetry',
+                'system': 'Core System Health'
+            };
+            document.getElementById('view-title').innerText = titles[viewId];
+
+            if (viewId === 'system') refreshHealth();
+            if (viewId === 'threat') refreshThreats();
+            if (viewId === 'geo') refreshGeo();
+            if (viewId === 'security') refreshLogs();
+        }
+
+        async function refreshGeo() {
+            const container = document.getElementById('geo-stats-container');
+            container.innerHTML = '<div style="color: #666;">Analyzing regional threat density...</div>';
+            try {
+                const response = await fetch('/api/admin/geo_stats');
+                const stats = await response.json();
+                container.innerHTML = '';
+                
+                const maxThreats = (stats && stats.length > 0) ? stats[0].threat_count : 1;
+                
+                stats.forEach(item => {
+                    const percentage = (item.threat_count / maxThreats) * 100;
+                    container.innerHTML += `
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem;">
+                                <span style="font-weight: 700; color: white;">${item.state || 'Unknown'}</span>
+                                <span style="font-weight: 800; color: #FF453A;">${item.threat_count} Interceptions</span>
+                            </div>
+                            <div style="height: 12px; background: #222; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255, 69, 58, 0.1);">
+                                <div style="height: 100%; background: linear-gradient(90deg, #FF453A, #FF9F0A); width: ${percentage}%; transition: width 1s ease;"></div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) { container.innerHTML = 'Failed to load geo stats.'; }
+        }
+
+        async function broadcastAlert() {
+            const title = document.getElementById('alert-title').value;
+            const message = document.getElementById('alert-message').value;
+            if (!title || !message) return alert("Please fill in both fields.");
+            
+            try {
+                const response = await fetch('/api/admin/broadcast', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ title, message, severity: 'danger' })
+                });
+                if (response.ok) {
+                    alert("NUCLEAR BROADCAST INITIATED SUCCESSFULLY.");
+                    refreshLogs();
+                }
+            } catch (err) { alert("Broadcast transmission failed."); }
+        }
+
+        async function removeAlert() {
+            try {
+                await fetch('/api/admin/remove_alert', { method: 'POST' });
+                alert("ACTIVE ALERT TERMINATED.");
+                refreshLogs();
+            } catch (err) { }
+        }
+
+        async function refreshLogs() {
+            const container = document.getElementById('admin-logs-container');
+            try {
+                const response = await fetch('/api/admin/logs');
+                const logs = await response.json();
+                container.innerHTML = '';
+                logs.forEach(log => {
+                    container.innerHTML += `
+                        <div style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.03); display: flex; gap: 12px;">
+                            <span style="color: #555;">[${log.time}]</span>
+                            <span style="color: ${log.type === 'AUTH' ? '#AF52DE' : '#007AFF'}; font-weight: 800;">${log.type}</span>
+                            <span style="color: #888;">${log.msg}</span>
+                        </div>
+                    `;
+                });
+            } catch (err) { }
+        }
+
+        async function refreshThreats() {
+            const container = document.getElementById('news-container');
+            container.innerHTML = '<div style="color: #666; padding: 20px;">Fetching global threat intelligence...</div>';
+            
+            try {
+                const response = await fetch('/api/admin/threat_news');
+                const news = await response.json();
+                
+                container.innerHTML = '';
+                news.forEach(item => {
+                    container.innerHTML += `
+                        <div class="dashboard-section" style="margin-bottom: 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px;">
+                                <span style="background: rgba(0, 122, 255, 0.1); color: var(--admin-accent); padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 800;">${item.category}</span>
+                                <span style="font-size: 0.75rem; color: #666;">${item.date}</span>
+                            </div>
+                            <h4 style="margin: 0 0 12px 0; color: white; font-size: 1.1rem;">${item.title}</h4>
+                            <p style="font-size: 0.85rem; color: #888; leading: 1.5; margin-bottom: 20px;">${item.summary}</p>
+                            <div style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.1); padding: 12px; border-radius: 12px; margin-bottom: 16px;">
+                                <div style="font-size: 0.65rem; text-transform: uppercase; color: #555; font-weight: 800; margin-bottom: 8px;">Intercept Pattern</div>
+                                <div style="font-family: 'JetBrains Mono'; font-size: 0.8rem; color: #aaa;">"${item.pattern}"</div>
+                            </div>
+                            <a href="${item.link}" target="_blank" style="color: #fff; text-decoration: none; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; display: flex; align-items: center; gap: 4px; padding: 8px 12px; border: 1px solid #333; border-radius: 8px; width: fit-content;">
+                                View Full Report <i data-lucide="external-link" style="width: 12px;"></i>
+                            </a>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                container.innerHTML = '<div style="color: #FF453A; padding: 20px;">Failed to connect to threat stream. Check system logs.</div>';
+            }
+        }
+
+        async function refreshHealth() {
+            try {
+                const response = await fetch('/api/admin/system_health');
+                const data = await response.json();
+
+                document.getElementById('health-os').innerText = data.os + " (" + data.arch + ")";
+                document.getElementById('health-db-size').innerText = data.db_size_mb + " MB";
+                document.getElementById('health-users').innerText = data.user_count;
+                
+                // Bars
+                updateBar('cpu', data.cpu_load);
+                updateBar('mem', data.mem_usage);
+
+                // Service Status
+                const intList = document.getElementById('integration-list');
+                intList.innerHTML = '';
+                for (const [service, status] of Object.entries(data.api_status)) {
+                    const isOnline = status === 'ONLINE' || status === 'CONNECTED';
+                    intList.innerHTML += `
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="text-transform: uppercase; font-size: 0.8rem; font-weight: 700; color: #888;">${service}</span>
+                            <span style="font-size: 0.8rem; font-weight: 800; color: ${isOnline ? '#32D74B' : '#FF453A'};">${status}</span>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error("Health fetch failed", err);
+            }
+        }
+
+        function updateBar(id, val) {
+            document.getElementById(id + '-val').innerText = val + "%";
+            document.getElementById(id + '-bar').style.width = val + "%";
+        }
+
+        async function confirmDeleteUser(buttonEl) {
+            const userId = buttonEl.getAttribute('data-user-id');
+            const userName = buttonEl.getAttribute('data-user-name');
+            
+            if (confirm(`ARE YOU SURE? This will permanently terminate Subject: ${userName}.\nAll associated intelligence and history will be purged.`)) {
+                try {
+                    const response = await fetch(`/api/admin/delete_user/${userId}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        const row = document.getElementById(`user-row-${userId}`);
+                        if (row) {
+                            row.style.opacity = '0';
+                            row.style.transform = 'translateX(-20px)';
+                            row.style.transition = 'all 0.4s ease';
+                            setTimeout(() => row.remove(), 400);
+                        }
+                    } else {
+                        alert("PURGE FAILED: " + data.error);
+                    }
+                } catch (err) {
+                    alert("COMMUNICATION ERROR: Unable to reach Nexus.");
+                }
+            }
+        }
+
+        // Auto-refresh when on system view
+        setInterval(() => {
+            if (document.getElementById('view-system').classList.contains('active')) {
+                refreshHealth();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
