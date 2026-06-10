@@ -17,6 +17,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import smtplib
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from database import init_db, get_db
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -634,15 +635,64 @@ def analyze_apk(filename, file_size):
 
 def send_otp(email, otp, mode="Login"):
     try:
-        msg = MIMEText(f"Your SMS AI {mode} OTP is: {otp}")
-        msg["Subject"] = f"{mode} OTP"
-        msg["From"] = EMAIL_USER
+        print(f"   [SMTP] Sending {mode} OTP to {email}...")
+        
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = f"SMS AI Platform – Your {mode} Verification Code"
+        msg["From"] = f"SMS AI Platform <{EMAIL_USER}>"
         msg["To"] = email
+
+        # Plain-text fallback
+        plain_text = (
+            f"SMS AI Platform – {mode} Verification\n\n"
+            f"Your one-time verification code is: {otp}\n\n"
+            "This code is valid for 10 minutes. Do not share it with anyone.\n\n"
+            "If you did not request this code, please ignore this email.\n\n"
+            "– SMS AI Security Team"
+        )
+
+        # HTML version (much less likely to land in spam)
+        html_text = f"""
+        <html>
+          <body style="font-family: Arial, sans-serif; background: #f4f6fb; padding: 30px;">
+            <div style="max-width: 480px; margin: auto; background: #ffffff; border-radius: 12px;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.08); overflow: hidden;">
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 24px;">&#128274; SMS AI Platform</h1>
+                <p style="color: rgba(255,255,255,0.85); margin: 6px 0 0; font-size: 14px;">{mode} Verification</p>
+              </div>
+              <div style="padding: 36px 30px; text-align: center;">
+                <p style="color: #444; font-size: 15px; margin-bottom: 24px;">Your one-time verification code is:</p>
+                <div style="background: #f0f2ff; border-radius: 10px; padding: 20px; display: inline-block;
+                            letter-spacing: 10px; font-size: 36px; font-weight: bold; color: #5a3de6;">
+                  {otp}
+                </div>
+                <p style="color: #888; font-size: 13px; margin-top: 24px;">
+                  This code is valid for <strong>10 minutes</strong>.<br>
+                  Never share this code with anyone.
+                </p>
+              </div>
+              <div style="background: #fafafa; border-top: 1px solid #eee; padding: 16px 30px; text-align: center;">
+                <p style="color: #bbb; font-size: 12px; margin: 0;">
+                  If you didn't request this, you can safely ignore this email.
+                </p>
+              </div>
+            </div>
+          </body>
+        </html>
+        """
+
+        msg.attach(MIMEText(plain_text, "plain"))
+        msg.attach(MIMEText(html_text, "html"))
+
         with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
             server.login(EMAIL_USER, EMAIL_PASS)
             server.send_message(msg)
+        
+        print(f"   [SMTP] OTP email sent successfully to {email}")
         return True
-    except:
+    except Exception as e:
+        print(f"   [SMTP] ERROR sending OTP email to {email}: {e}")
         return False
 
 def admin_required(f):
