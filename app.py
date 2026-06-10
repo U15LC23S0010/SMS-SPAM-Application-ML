@@ -1,4 +1,13 @@
+import sys
 import os
+import json
+import google.generativeai as genai
+
+# Fix Windows console encoding for Kannada/UTF-8 characters
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+if hasattr(sys.stderr, 'reconfigure'):
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
 import random
 import sqlite3
 import threading
@@ -150,7 +159,7 @@ init_db()
 
 # ---------------- HELPERS ----------------
 
-def analyze_spam(content, scan_type="email", sensitivity="Balanced"):
+def analyze_spam_heuristics(content, scan_type="email", sensitivity="Balanced"):
     print(f"   [ANALYZER] Input received ({scan_type}) | Sensitivity: {sensitivity}")
     score = 0
     prediction = "Ham"
@@ -385,7 +394,111 @@ def analyze_spam(content, scan_type="email", sensitivity="Balanced"):
     
     return prediction, score, explanation, explanation_kn, list(set(flagged_keywords)), content
 
-def analyze_apk(filename, file_size):
+def analyze_spam(content, scan_type="email", sensitivity="Balanced"):
+    print(f"   [ANALYZER] Input received ({scan_type}) | Sensitivity: {sensitivity}")
+    
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print("   [ANALYZER] No GEMINI_API_KEY found. Falling back to heuristics.")
+        return analyze_spam_heuristics(content, scan_type, sensitivity)
+        
+    # Configure API key
+    genai.configure(api_key=api_key)
+    
+    system_instruction = (
+        "You are an expert cybersecurity analyst. Analyze the provided content for phishing, spam, smishing, "
+        "scams, malware distribution, or policy/security threats.\n"
+        f"Scan Type: {scan_type}\n"
+        f"Sensitivity level: {sensitivity}\n"
+        "Guidelines:\n"
+        "1. For scan_type 'email': identify phishing, fake invoices, false rewards, impersonation, urgency.\n"
+        "2. For scan_type 'sms' or 'otp': identify smishing, direct OTP solicitation, fake bank locks, UPI PIN requests.\n"
+        "3. For 'url': analyze link safety, domain name, spelling, TLD (e.g., .xyz, .click, .site are highly suspicious), subdomains.\n"
+        "4. For 'qr_code': analyze decoded QR text for threats.\n"
+        "5. For 'voice': check transcripts for deepfakes, voice cloning, emergency social engineering scams.\n"
+        "6. In 'Highly Sensitive' mode, be more strict: flag borderline cases as 'Spam' and increase the threat score.\n"
+        "7. In 'Legacy Mode', focus primarily on traditional spam (promotional, winnings, free prizes) and ignore modern fintech/deepfake triggers.\n\n"
+        "You MUST respond ONLY with a valid JSON object matching this schema:\n"
+        "{\n"
+        "  \"prediction\": \"Spam\" | \"Ham\",\n"
+        "  \"score\": integer between 0 and 100 representing threat level,\n"
+        "  \"explanation\": \"Clear English explanation of why the message is spam/ham and what threats were detected (max 2 sentences)\",\n"
+        "  \"explanation_kn\": \"Natural Kannada translation of the English explanation (max 2 sentences)\",\n"
+        "  \"flagged_keywords\": [\"list\", \"of\", \"suspicious\", \"terms\", \"found\"],\n"
+        "  \"corrected_content\": \"Autocorrected content (only if there are typos; otherwise same as input content)\"\n"
+        "}\n"
+        "Do not include any introductory or concluding text. Output ONLY the JSON."
+    )
+    
+    prompt = f"Analyze the following content:\n\n{content}"
+    
+    response_text = None
+    for i, model_name in enumerate(["gemini-3.5-flash", "gemini-2.5-flash"]):
+        if i > 0:
+            time.sleep(1)  # Brief pause between retries to avoid rate limit
+        try:
+            print(f"   [ANALYZER] Attempting Gemini call with {model_name}...")
+            model = genai.GenerativeModel(model_name)
+            full_prompt = f"{system_instruction}\n\n{prompt}"
+            response = model.generate_content(
+                full_prompt,
+                request_options={"timeout": 30}
+            )
+            try:
+                text = response.text
+                if text and text.strip():
+                    response_text = text.strip()
+                    break
+            except Exception as re:
+                print(f"   [ANALYZER] Empty/blocked response from {model_name}: {re}")
+        except Exception as e:
+            print(f"   [ANALYZER] Error calling {model_name}: {e}")
+            
+    if not response_text:
+        print("   [ANALYZER] Gemini API calls failed. Falling back to heuristics.")
+        return analyze_spam_heuristics(content, scan_type, sensitivity)
+        
+    try:
+        text_to_parse = response_text
+        if text_to_parse.startswith("```"):
+            parts = text_to_parse.split("```")
+            for part in parts:
+                p_str = part.strip()
+                if p_str.startswith("json"):
+                    p_str = p_str[4:].strip()
+                if p_str.startswith("{") and p_str.endswith("}"):
+                    text_to_parse = p_str
+                    break
+                    
+        text_to_parse = text_to_parse.strip()
+        
+        start = text_to_parse.find('{')
+        end = text_to_parse.rfind('}')
+        if start != -1 and end != -1:
+            text_to_parse = text_to_parse[start:end+1]
+            
+        data = json.loads(text_to_parse)
+        
+        prediction = data.get("prediction", "Ham")
+        score = int(data.get("score", 0))
+        explanation = data.get("explanation", "")
+        explanation_kn = data.get("explanation_kn", "")
+        flagged_keywords = data.get("flagged_keywords", [])
+        corrected_content = data.get("corrected_content", content) or content
+        
+        if prediction not in ["Spam", "Ham"]:
+            prediction = "Spam" if score >= 40 else "Ham"
+            
+        score = max(0, min(100, score))
+        
+        print(f"   [ANALYZER] Gemini success: prediction={prediction}, score={score}")
+        return prediction, score, explanation, explanation_kn, flagged_keywords, corrected_content
+    except Exception as e:
+        print(f"   [ANALYZER] Error parsing Gemini JSON: {e}. Raw response: {response_text[:200]}")
+        print("   [ANALYZER] Falling back to heuristics.")
+        return analyze_spam_heuristics(content, scan_type, sensitivity)
+
+def analyze_apk_heuristics(filename, file_size):
     print(f"   [APK ANALYZER] Scanning file: {filename}")
     score = 0
     prediction = "Ham"
@@ -430,6 +543,94 @@ def analyze_apk(filename, file_size):
             explanation = "Clean APK structure. No malicious patterns detected in filename or metadata profile."
             
     return prediction, min(99, score), explanation, flagged_keywords
+
+def analyze_apk(filename, file_size):
+    print(f"   [APK ANALYZER] Scanning file: {filename} ({file_size} bytes)")
+    
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print("   [APK ANALYZER] No GEMINI_API_KEY found. Falling back to heuristics.")
+        return analyze_apk_heuristics(filename, file_size)
+        
+    genai.configure(api_key=api_key)
+    
+    system_instruction = (
+        "You are an Android security analyst. Analyze the provided APK filename and file size to determine "
+        "if the app is potentially malicious, cracked, spoofed, or safe (Ham).\n"
+        "Identify threats like double extensions, Trojan names, cracked/pro mods, or keyloggers.\n\n"
+        "You MUST respond ONLY with a valid JSON object matching this schema:\n"
+        "{\n"
+        "  \"prediction\": \"Spam\" | \"Ham\",\n"
+        "  \"score\": integer between 0 and 100 representing threat level,\n"
+        "  \"explanation\": \"Clear explanation of why the APK is flagged or safe (max 2 sentences)\",\n"
+        "  \"flagged_keywords\": [\"list\", \"of\", \"suspicious\", \"terms\", \"found\"]\n"
+        "}\n"
+        "Do not include any introductory or concluding text. Output ONLY the JSON."
+    )
+    
+    prompt = f"APK Filename: {filename}\nFile Size: {file_size} bytes"
+    
+    response_text = None
+    for i, model_name in enumerate(["gemini-3.5-flash", "gemini-2.5-flash"]):
+        if i > 0:
+            time.sleep(1)
+        try:
+            model = genai.GenerativeModel(model_name)
+            full_prompt = f"{system_instruction}\n\n{prompt}"
+            response = model.generate_content(
+                full_prompt,
+                request_options={"timeout": 30}
+            )
+            try:
+                text = response.text
+                if text and text.strip():
+                    response_text = text.strip()
+                    break
+            except Exception as re:
+                print(f"   [APK ANALYZER] Empty/blocked response from {model_name}: {re}")
+        except Exception as e:
+            print(f"   [APK ANALYZER] Error calling {model_name}: {e}")
+            
+    if not response_text:
+        return analyze_apk_heuristics(filename, file_size)
+        
+    try:
+        text_to_parse = response_text
+        if text_to_parse.startswith("```"):
+            parts = text_to_parse.split("```")
+            for part in parts:
+                p_str = part.strip()
+                if p_str.startswith("json"):
+                    p_str = p_str[4:].strip()
+                if p_str.startswith("{") and p_str.endswith("}"):
+                    text_to_parse = p_str
+                    break
+                    
+        text_to_parse = text_to_parse.strip()
+        
+        start = text_to_parse.find('{')
+        end = text_to_parse.rfind('}')
+        if start != -1 and end != -1:
+            text_to_parse = text_to_parse[start:end+1]
+            
+        data = json.loads(text_to_parse)
+        
+        prediction = data.get("prediction", "Ham")
+        score = int(data.get("score", 0))
+        explanation = data.get("explanation", "")
+        flagged_keywords = data.get("flagged_keywords", [])
+        
+        if prediction not in ["Spam", "Ham"]:
+            prediction = "Spam" if score >= 40 else "Ham"
+            
+        score = max(0, min(100, score))
+        
+        print(f"   [APK ANALYZER] Gemini success: prediction={prediction}, score={score}")
+        return prediction, score, explanation, flagged_keywords
+    except Exception as e:
+        print(f"   [APK ANALYZER] Error parsing Gemini JSON: {e}")
+        return analyze_apk_heuristics(filename, file_size)
+
 
 def send_otp(email, otp, mode="Login"):
     try:
@@ -862,14 +1063,8 @@ def api_autocorrect():
     if not text: return jsonify({"corrected": ""})
     return jsonify({"corrected": auto_correct(text)})
 
-@app.route("/api/chat", methods=["POST"])
-def chat():
-    if not session.get("logged_in"): return jsonify({"response": "Unauthenticated access."}), 401
-    
-    data = request.json
-    message = data.get("message", "").strip().lower()
-    
-    # --- Feature Knowledge Base (Bilingual) ---
+def chat_heuristics(message):
+    message_lower = message.lower()
     kb = {
         "email": {
             "en": "Our <b>Email Analysis</b> node uses ML heuristics to detect phishing attempts, unauthorized sender patterns, and malicious attachments. <br><br><b>Tip</b>: Always check if the sender's email domain matches the official company website.",
@@ -893,17 +1088,13 @@ def chat():
         }
     }
 
-    # Logic to identify feature-specific queries
-    res = ""
-    # Check for keywords
     matched_feature = None
-    if any(x in message for x in ["email", "mail"]): matched_feature = "email"
-    elif any(x in message for x in ["sms", "message", "smishing"]): matched_feature = "sms"
-    elif any(x in message for x in ["link", "url", "site", "website"]): matched_feature = "link"
-    elif any(x in message for x in ["qr", "code", "scanner"]): matched_feature = "qr"
-    elif any(x in message for x in ["apk", "app", "install", "malware"]): matched_feature = "apk"
+    if any(x in message_lower for x in ["email", "mail"]): matched_feature = "email"
+    elif any(x in message_lower for x in ["sms", "message", "smishing"]): matched_feature = "sms"
+    elif any(x in message_lower for x in ["link", "url", "site", "website"]): matched_feature = "link"
+    elif any(x in message_lower for x in ["qr", "code", "scanner"]): matched_feature = "qr"
+    elif any(x in message_lower for x in ["apk", "app", "install", "malware"]): matched_feature = "apk"
 
-    # Identify language (Heuristic)
     is_kn = any('\u0C80' <= char <= '\u0CFF' for char in message) or "ಕನ್ನಡ" in message
 
     if matched_feature:
@@ -913,14 +1104,70 @@ def chat():
             res += "<br><br><b>How to use?</b> Just paste the content or upload the file into the respective card in your Hub and click 'Analyze'."
         else:
             res += "<br><br><b>ಬಳಸುವುದು ಹೇಗೆ?</b> ಸಂಬಂಧಿತ ಬಾಕ್ಸ್‌ನಲ್ಲಿ ಮಾಹಿತಿಯನ್ನು ಸೇರಿಸಿ ಮತ್ತು 'ವಿಶ್ಲೇಷಿಸಿ' ಬಟನ್ ಕ್ಲಿಕ್ ಮಾಡಿ."
-    elif any(x in message for x in ["hi", "hello", "hey"]):
+    elif any(x in message_lower for x in ["hi", "hello", "hey"]):
         res = "Hello! I'm your Security Guardian. You can ask me about our scanning features (Email, SMS, Links, QR, APK) or security tips. How can I protect you today?"
-    elif "privacy" in message:
+    elif "privacy" in message_lower:
         res = "Your privacy is fundamental. All analysis is performed within your secure user environment. We do not store your private message content for longer than needed for history tracking."
     else:
         res = "I'm here to help! I can provide details on how our Email, SMS, Link, QR, and APK scans work. Just ask about any specific feature!"
 
-    return jsonify({"response": res})
+    return res
+
+@app.route("/api/chat", methods=["POST"])
+def chat():
+    if not session.get("logged_in"): return jsonify({"response": "Unauthenticated access."}), 401
+    
+    data = request.json
+    message = data.get("message", "").strip()
+    if not message:
+        return jsonify({"response": "Please say something."})
+        
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return jsonify({"response": chat_heuristics(message)})
+        
+    # Configure API key
+    genai.configure(api_key=api_key)
+    
+    system_instruction = (
+        "You are 'Security Guardian', a smart bilingual AI assistant for the SMS & Email Spam AI Platform.\n"
+        "Your task is to answer user queries about security, phishing, smishing, scam prevention, or how to use the platform.\n"
+        "Here are the platform features:\n"
+        "- Email Analysis: Detects phishing, fraudulent invoices, and malicious attachments.\n"
+        "- SMS & Smishing: Identifies high-urgency keywords, fake bank links, and delivery scam templates.\n"
+        "- URL Safety: Scans links, checks TLD status, SSL, and domain spoofing.\n"
+        "- QR Payload: Decodes QR codes and verifies the target link/content.\n"
+        "- APK Binary Scan: Inspects Android packages for malware filenames and size signatures.\n"
+        "- Family Circle: Allows guardians to receive alerts if their family members receive a high-risk message.\n\n"
+        "Keep your response concise (max 3-4 sentences). Answer in the language the user uses (English, Kannada, or Hinglish/Kannanglish). "
+        "Be friendly, professional, and focus on security best practices."
+    )
+    
+    response_text = None
+    for i, model_name in enumerate(["gemini-3.5-flash", "gemini-2.5-flash"]):
+        if i > 0:
+            time.sleep(1)
+        try:
+            model = genai.GenerativeModel(model_name)
+            full_prompt = f"{system_instruction}\n\nUser: {message}"
+            response = model.generate_content(
+                full_prompt,
+                request_options={"timeout": 30}
+            )
+            try:
+                text = response.text
+                if text and text.strip():
+                    response_text = text.strip()
+                    break
+            except Exception as re:
+                print(f"   [CHAT] Empty/blocked response from {model_name}: {re}")
+        except Exception as e:
+            print(f"   [CHAT] Error calling {model_name}: {e}")
+            
+    if response_text:
+        return jsonify({"response": response_text})
+    else:
+        return jsonify({"response": chat_heuristics(message)})
 
 # ----------------- AI ANALYZER API -----------------
 import threading
